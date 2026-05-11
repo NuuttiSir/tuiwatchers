@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,18 +25,20 @@ type AccessToken struct {
 }
 
 type UserData struct {
-	Data []struct {
-		BroadcasterType string    `json:"broadcaster_type"`
-		CreatedAt       time.Time `json:"created_at"`
-		Description     string    `json:"description"`
-		DisplayName     string    `json:"display_name"`
-		ID              string    `json:"id"`
-		Login           string    `json:"login"`
-		OfflineImageURL string    `json:"offline_image_url"`
-		ProfileImageURL string    `json:"profile_image_url"`
-		Type            string    `json:"type"`
-		ViewCount       int       `json:"view_count"`
-	} `json:"data"`
+	BroadcasterType string    `json:"broadcaster_type"`
+	CreatedAt       time.Time `json:"created_at"`
+	Description     string    `json:"description"`
+	DisplayName     string    `json:"display_name"`
+	ID              string    `json:"id"`
+	Login           string    `json:"login"`
+	OfflineImageURL string    `json:"offline_image_url"`
+	ProfileImageURL string    `json:"profile_image_url"`
+	Type            string    `json:"type"`
+	ViewCount       int       `json:"view_count"`
+}
+
+type UserDataList struct {
+	Data []UserData `json:"data"`
 }
 
 type FollowData struct {
@@ -53,25 +54,20 @@ type FollowData struct {
 	}
 }
 
-func getAccessToken(clientID, clientSecret string) AccessToken {
-
-	// try to post into https://id.twitch.tv/oauth2/token
-	resp2, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
-		// With clientID,devicveCode, and perms user:read:follows
+func getAppToken(clientID, clientSecret string) AccessToken {
+	resp, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
 		"client_id":     {clientID},
 		"client_secret": {clientSecret},
-		// "device_code":   {deviceCode.DeviceCode},
-		// "scopes":        {"user:read:follows"},
-		"grant_type": {"client_credentials"},
+		"grant_type":    {"client_credentials"},
 	})
 	if err != nil {
 		fmt.Println("error:", err)
 		return AccessToken{}
 	}
-	defer resp2.Body.Close()
+	defer resp.Body.Close()
 
 	var accessToken AccessToken
-	err = json.NewDecoder(resp2.Body).Decode(&accessToken)
+	err = json.NewDecoder(resp.Body).Decode(&accessToken)
 	if err != nil {
 		fmt.Println("error decoding:", err)
 		return AccessToken{}
@@ -83,18 +79,14 @@ func getAccessToken(clientID, clientSecret string) AccessToken {
 	}
 }
 
-func main() {
-	godotenv.Load()
-	clientID := os.Getenv("CLIENT_ID")
-	clientSecret := os.Getenv("CLIENT_SECRET")
-
+func getUserToken(clientID string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/device", url.Values{
 		"client_id": {clientID},
-		"scopes":    {"user:read:follows"},
+		"scope":     {"user:read:follows"},
 	})
 	if err != nil {
 		fmt.Println("error:", err)
-		return
+		return AccessToken{}
 	}
 	defer resp.Body.Close()
 
@@ -102,100 +94,145 @@ func main() {
 	err = json.NewDecoder(resp.Body).Decode(&deviceCode)
 	if err != nil {
 		fmt.Println("error decoding:", err)
-		return
+		return AccessToken{}
 	}
 
-	// try to post into https://id.twitch.tv/oauth2/token
-	resp2, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
-		// With clientID,devicveCode, and perms user:read:follows
-		"client_id":     {clientID},
-		"client_secret": {clientSecret},
-		// "device_code":   {deviceCode.DeviceCode},
-		// "scopes":        {"user:read:follows"},
-		"grant_type": {"client_credentials"},
-	})
-	if err != nil {
-		fmt.Println("error:", err)
-		return
+	fmt.Println("Go to: ", deviceCode.VerificationURI)
+	fmt.Println("Input code: ", deviceCode.UserCode)
+
+	var userToken AccessToken
+	for {
+		time.Sleep(time.Duration(deviceCode.Interval) * time.Second)
+
+		resp, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
+			"client_id":   {clientID},
+			"device_code": {deviceCode.DeviceCode},
+			"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
+		})
+		if err != nil {
+			fmt.Println("err: ", err)
+			return AccessToken{}
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&userToken)
+		if err != nil {
+			fmt.Println("err: ", err)
+			return AccessToken{}
+		}
+		resp.Body.Close()
+
+		if userToken.AccessToken != "" {
+			break
+		}
+		fmt.Println("Waiting for authorization... Trying again in 5 seconds")
 	}
-	defer resp2.Body.Close()
 
-	var accessToken AccessToken
-	err = json.NewDecoder(resp2.Body).Decode(&accessToken)
-	if err != nil {
-		fmt.Println("error decoding:", err)
-		return
-	}
-	//TODO: Change token type to have first letter upper
-	// fmt.Println("TokenType: ", accessToken.TokenType)
+	return userToken
+}
 
-	// check if gotten tokens
-	// iffnot keep polling or return error
-	// if yes Save to tokenResponse Struct
-
-	//In the end store to tokens.json
-
-	// GET USER
+func getUserData(username, clientID string, appToken AccessToken) UserData {
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/users", nil)
 	if err != nil {
 		fmt.Println("error:", err)
-		return
+		return UserData{}
+	}
+
+	if username != "" {
+		q := req.URL.Query()
+		q.Add("login", username)
+		req.URL.RawQuery = q.Encode()
+	}
+
+	// Add query params
+	// queryParams := req.URL.Query()
+	// queryParams.Add("login", username)
+	// req.URL.RawQuery = queryParams.Encode()
+
+	// Add headers
+	req.Header.Set("Authorization", "Bearer "+appToken.AccessToken)
+	req.Header.Set("Client-Id", clientID)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error:", err)
+		return UserData{}
+	}
+	defer resp.Body.Close()
+
+	var userDataList UserDataList
+	err = json.NewDecoder(resp.Body).Decode(&userDataList)
+	if err != nil {
+		fmt.Println("error decoding:", err)
+		return UserData{}
+	}
+	if len(userDataList.Data) == 0 {
+		fmt.Println("user not found")
+		return UserData{}
+	}
+	return userDataList.Data[0]
+}
+
+func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowData {
+	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/channels/followed", nil)
+	if err != nil {
+		fmt.Println("error:", err)
+		return FollowData{}
 	}
 
 	// Add query params
 	queryParams := req.URL.Query()
-	queryParams.Add("login", "noobi3553")
+	queryParams.Add("user_id", userID)
 	req.URL.RawQuery = queryParams.Encode()
 
 	// Add headers
-	req.Header.Set("Authorization", "Bearer "+accessToken.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
 	req.Header.Set("Client-Id", clientID)
 
 	client := &http.Client{}
-	resp3, err := client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("error:", err)
-		return
+		return FollowData{}
 	}
-	defer resp3.Body.Close()
-
-	var userData UserData
-	err = json.NewDecoder(resp3.Body).Decode(&userData)
-	if err != nil {
-		fmt.Println("error decoding:", err)
-		return
-	}
-	fmt.Println(userData.Data[0].ID)
-
-	// GET followed streams
-	req2, err := http.NewRequest("GET", "https://api.twitch.tv/helix/channels/followed", nil)
-	if err != nil {
-		fmt.Println("error:", err)
-		return
-	}
-
-	// Add query params
-	queryParams2 := req2.URL.Query()
-	queryParams2.Add("user_id", userData.Data[0].ID)
-	req2.URL.RawQuery = queryParams2.Encode()
-
-	// Add headers
-	req2.Header.Set("Authorization", "Bearer "+accessToken.AccessToken)
-	req2.Header.Set("Client-Id", clientID)
-
-	client2 := &http.Client{}
-	resp4, err := client2.Do(req2)
-	if err != nil {
-		fmt.Println("error:", err)
-		return
-	}
-	defer resp4.Body.Close()
+	defer resp.Body.Close()
 
 	var followData FollowData
-	err = json.NewDecoder(resp4.Body).Decode(&followData)
+	err = json.NewDecoder(resp.Body).Decode(&followData)
 	if err != nil {
 		fmt.Println("error decoding:", err)
-		return
+		return FollowData{}
 	}
-	fmt.Println(followData)
+	return followData
+}
+
+func main() {
+	godotenv.Load()
+	clientID := os.Getenv("CLIENT_ID")
+	clientSecret := os.Getenv("CLIENT_SECRET")
+
+	// 1. Check env vars loaded
+	fmt.Println("clientID:", clientID)
+	fmt.Println("clientSecret:", clientSecret)
+
+	appToken := getAppToken(clientID, clientSecret)
+	// 2. Check app token
+	fmt.Println("appToken:", appToken)
+
+	userToken := getUserToken(clientID)
+	// 3. Check user token
+	fmt.Println("userToken:", userToken)
+
+	userData := getUserData("noobi3553", clientID, appToken)
+	// 4. Check user data
+	fmt.Println("userData:", userData)
+
+	followData := getFollowedChannels(userData.ID, clientID, userToken)
+	fmt.Println("followData:", followData)
+
+	//TODO: Change token type to have first letter upper
+	// fmt.Println("TokenType: ", accessToken.TokenType)
+
+	//In the end store to tokens.json
+
 }
