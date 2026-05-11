@@ -12,6 +12,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+//== CONSTS ==//
+const TWITCH_OAUTH_URL = "https://id.twitch.tv/oauth2/"
+const TWITCH_API_URL = "https://api.twitch.tv/helix/"
+
 type DeviceCodeResponse struct {
 	DeviceCode      string `json:"device_code"`
 	Interval        int    `json:"interval"`
