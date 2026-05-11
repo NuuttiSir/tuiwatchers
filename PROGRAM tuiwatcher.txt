@@ -1,0 +1,176 @@
+PROGRAM tuiwatcher
+
+== STRUCTS ==
+
+DeviceCodeResponse
+    device_code, user_code, verification_uri, interval
+
+TokenResponse
+    access_token, refresh_token, error
+
+Tokens
+    access_token, refresh_token
+
+User
+    id, login, display_name
+
+Stream
+    user_name, game_name, title, viewer_count, thumbnail_url
+
+== CONSTANTS ==
+TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token"
+TWITCH_DEVICE_URL = "https://id.twitch.tv/oauth2/device"
+TWITCH_API_URL = "https://api.twitch.tv/helix"
+
+== STORAGE ==
+
+tokens_path()
+    return OS config dir + "/tuiwatcher/tokens.json"
+
+save_tokens(tokens)
+    create directory if not exists
+    serialize tokens to JSON
+    write to tokens_path()
+
+load_tokens()
+    read file at tokens_path()
+    if file not found → return nil
+    deserialize JSON into Tokens
+    return tokens
+
+== AUTH ==
+
+get_device_code(client_id)
+    POST to TWITCH_DEVICE_URL
+        body: client_id, scopes
+    decode response into DeviceCodeResponse
+    return DeviceCodeResponse
+
+poll_for_token(client_id, device_code, interval)
+    loop
+        sleep interval seconds
+        POST to TWITCH_TOKEN_URL
+            body: client_id, device_code, grant_type
+        decode response into TokenResponse
+        if error == "authorization_pending" → continue
+        if error == anything else → return error
+        if no error → return access_token, refresh_token
+
+refresh_token(client_id, client_secret, refresh_token)
+    POST to TWITCH_TOKEN_URL
+        body: client_id, client_secret, refresh_token, grant_type
+    decode response into TokenResponse
+    if error → return error
+    save new tokens to disk
+    return new access_token, new refresh_token
+
+== API ==
+
+get_user(client_id, access_token)
+    GET TWITCH_API_URL/users
+        headers: client_id, access_token
+    decode response
+    return User
+
+get_followed_streams(client_id, access_token, user_id)
+    GET TWITCH_API_URL/streams/followed
+        headers: client_id, access_token
+        params: user_id
+    decode response
+    return []Stream
+
+search_channels(client_id, access_token, query)
+    GET TWITCH_API_URL/search/channels
+        headers: client_id, access_token
+        params: query
+    decode response
+    return []Stream
+
+== PLAYER ==
+
+watch_stream(channel)
+    spawn subprocess
+        command: streamlink
+        args: twitch.tv/channel, best, --player, mpv
+    wait for subprocess or detach
+
+== CHAT ==
+
+connect_chat(channel)
+    open websocket to wss://irc-ws.chat.twitch.tv:443
+    send "PASS justinfan12345"    ← anonymous
+    send "NICK justinfan12345"
+    send "JOIN #channel"
+    loop
+        read message from websocket
+        if message contains "PRIVMSG"
+            parse username and text
+            send to UI via channel
+
+parse_chat_message(raw)
+    split on "PRIVMSG"
+    extract username from left side
+    extract message text from right side
+    return username, text
+
+== UI ==
+
+State
+    streams        []Stream
+    selected       int
+    chat_messages  []string
+    current_view   enum(FOLLOWED, SEARCH, WATCHING)
+    search_query   string
+    input_mode     bool
+
+render(state)
+    if current_view == FOLLOWED
+        render stream list
+            for each stream: name, game, viewer count
+            highlight selected
+    if current_view == SEARCH
+        render search input
+        render results list
+    if current_view == WATCHING
+        render chat panel
+            for each message: username, text
+
+handle_input(state)
+    UP/DOWN arrow   → move selected
+    ENTER           → watch_stream(selected stream)
+    "/"             → switch to SEARCH view, enable input_mode
+    "q"             → quit
+    ESC             → go back to FOLLOWED view
+    any char        → if input_mode, append to search_query
+
+== MAIN ==
+
+main()
+    load .env
+    read CLIENT_ID, CLIENT_SECRET from env
+
+    tokens = load_tokens()
+    if tokens == nil
+        device = get_device_code(CLIENT_ID)
+        print "Go to: " + device.verification_uri
+        print "Enter code: " + device.user_code
+        access_token, refresh_token = poll_for_token(CLIENT_ID, device.device_code, device.interval)
+        save_tokens(access_token, refresh_token)
+    else
+        access_token = tokens.access_token
+        refresh_token = tokens.refresh_token
+
+    user = get_user(CLIENT_ID, access_token)
+    if error == 401
+        access_token, refresh_token = refresh_token(CLIENT_ID, CLIENT_SECRET, refresh_token)
+
+    streams = get_followed_streams(CLIENT_ID, access_token, user.id)
+
+    start UI loop
+        render current state
+        handle input
+        if search_query changed
+            streams = search_channels(CLIENT_ID, access_token, search_query)
+        if stream selected
+            watch_stream(selected stream)
+            connect_chat(selected stream) in goroutine
