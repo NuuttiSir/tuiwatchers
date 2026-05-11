@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -54,6 +55,11 @@ type FollowData struct {
 	}
 }
 
+type TokenFile struct {
+	AccessToken string `json:"access_token"`
+	UserID      string `json:"user_id"`
+}
+
 func getAppToken(clientID, clientSecret string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
 		"client_id":     {clientID},
@@ -82,7 +88,7 @@ func getAppToken(clientID, clientSecret string) AccessToken {
 func getUserToken(clientID string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/device", url.Values{
 		"client_id": {clientID},
-		"scope":     {"user:read:follows"},
+		"scopes":    {"user:read:follows"},
 	})
 	if err != nil {
 		fmt.Println("error:", err)
@@ -180,12 +186,10 @@ func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowD
 		return FollowData{}
 	}
 
-	// Add query params
-	queryParams := req.URL.Query()
-	queryParams.Add("user_id", userID)
-	req.URL.RawQuery = queryParams.Encode()
+	q := req.URL.Query()
+	q.Add("user_id", userID)
+	req.URL.RawQuery = q.Encode()
 
-	// Add headers
 	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
 	req.Header.Set("Client-Id", clientID)
 
@@ -197,42 +201,146 @@ func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowD
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Println("follow error:", resp.Status, string(body))
+		return FollowData{}
+	}
+
 	var followData FollowData
-	err = json.NewDecoder(resp.Body).Decode(&followData)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&followData); err != nil {
 		fmt.Println("error decoding:", err)
 		return FollowData{}
 	}
 	return followData
 }
 
+func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {
+	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/users", nil)
+	if err != nil {
+		fmt.Println("error:", err)
+		return UserData{}
+	}
+
+	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
+	req.Header.Set("Client-Id", clientID)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("error:", err)
+		return UserData{}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Println("users error:", resp.Status, string(body))
+		return UserData{}
+	}
+
+	var userDataList UserDataList
+	if err := json.NewDecoder(resp.Body).Decode(&userDataList); err != nil {
+		fmt.Println("error decoding:", err)
+		return UserData{}
+	}
+	if len(userDataList.Data) == 0 {
+		fmt.Println("user not found")
+		return UserData{}
+	}
+	return userDataList.Data[0]
+}
+
+func saveToken(path, token, userID string) error {
+	file := TokenFile{
+		AccessToken: token,
+		UserID:      userID,
+	}
+	bytesWrite, err := json.MarshalIndent(file, "", " ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, bytesWrite, 0666)
+}
+
+func tokenLoad(path string) (TokenFile, error) {
+	bytesRead, err := os.ReadFile(path)
+	if err != nil {
+		return TokenFile{}, err
+	}
+	var tokenFile TokenFile
+	if err := json.Unmarshal(bytesRead, &tokenFile); err != nil {
+		return TokenFile{}, err
+	}
+	return tokenFile, nil
+}
+
+func validateToken(path string) error {
+	tokenFile, err := tokenLoad(path)
+	if err != nil {
+		return nil
+	}
+
+	fmt.Println(tokenFile.AccessToken)
+
+	req, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "OAuth"+tokenFile.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("OK")
+		// parse json file
+		// token is valid
+		// get scopes, userid, clientid
+	} else {
+		fmt.Println("EI OK")
+		// toklen is invalid/expired
+		// Prompt to re-auth
+	}
+	fmt.Println("TOKENS OK")
+	return nil
+}
+
+// TODO: Get pagination to work
 func main() {
 	godotenv.Load()
+
 	clientID := os.Getenv("CLIENT_ID")
-	clientSecret := os.Getenv("CLIENT_SECRET")
 
-	// 1. Check env vars loaded
-	fmt.Println("clientID:", clientID)
-	fmt.Println("clientSecret:", clientSecret)
+	file, err := os.Create("tokens.json")
+	if err != nil {
+		fmt.Println("err: ", err)
+	}
 
-	appToken := getAppToken(clientID, clientSecret)
-	// 2. Check app token
-	fmt.Println("appToken:", appToken)
+	validateToken("tokens.json")
 
 	userToken := getUserToken(clientID)
-	// 3. Check user token
-	fmt.Println("userToken:", userToken)
+	userTokenFile, err := json.Marshal(&userToken.AccessToken)
+	if err != nil {
+		fmt.Println("err: ", err)
+	}
+	file.Write(userTokenFile)
 
-	userData := getUserData("noobi3553", clientID, appToken)
-	// 4. Check user data
-	fmt.Println("userData:", userData)
+	authUser := getAuthenticatedUser(clientID, userToken)
+	authTokenFile, err := json.Marshal(&authUser.ID)
+	if err != nil {
+		fmt.Println("err: ", err)
+	}
+	file.Write(authTokenFile)
 
-	followData := getFollowedChannels(userData.ID, clientID, userToken)
-	fmt.Println("followData:", followData)
+	followData := getFollowedChannels(authUser.ID, clientID, userToken)
 
-	//TODO: Change token type to have first letter upper
-	// fmt.Println("TokenType: ", accessToken.TokenType)
-
-	//In the end store to tokens.json
-
+	_, err = json.MarshalIndent(followData, "", " ")
+	if err != nil {
+		return
+	}
 }
