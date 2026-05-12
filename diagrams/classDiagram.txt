@@ -1,3 +1,39 @@
 @startuml
+package "main" {
+  class AccessToken {
+    +AccessToken: string
+    +ExpiresIn: int
+    +TokenType: string
+  }
 
+  class UserData {
+    +BroadcasterType: string
+    +CreatedAt:       time.Time
+    +Description:     string
+    +DisplayName:     string
+    +ID:              string
+    +Login:           string
+    +OfflineImageURL: string
+    +ProfileImageURL: string
+    +Type:            string
+    +ViewCount:       int
+
+  class UserDataList {
+    +Data: []UserData
+  }
+
+  class FollowData {
+  }
+
+  class TokenFile {
+    +AccessToken: string
+    +UserID: string
+  }
+
+  class TwitchAPIService {
+    +getUserData(username, clientID, appToken)
+    +getFollowedChannels(userID, clientID, userToken)
+    +getAuthenticatedUser(clientID, userToken)
+  }
+}
 @enduml
