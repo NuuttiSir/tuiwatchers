@@ -1,0 +1,10 @@
+@startuml
+
+start
+
+:Start application;
+:Choose stream to watch;
+:Application opens mpv player with the stream;
+
+stop
+@enduml
