@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"charm.land/bubbles/v2/list"
@@ -91,7 +90,6 @@ func printFollowData(followDataList FollowDataList) {
 }
 
 // TODO: Get pagination to work
-// NOTE: You can load a stream with https://twitch.tv/<channel_name>
 func main() {
 	godotenv.Load()
 	clientID := os.Getenv("CLIENT_ID")
@@ -129,10 +127,6 @@ func main() {
 		if err := saveToken(tokenFilePath, userToken.AccessToken, authUser.ID); err != nil {
 			fmt.Println("err saving token:", err)
 		}
-
-		followDataList := getFollowedChannels(authUser.ID, clientID, userToken)
-		printFollowData(followDataList)
-		return
 	}
 
 	fmt.Println("Token is valid, reusing saved session.")
@@ -142,14 +136,16 @@ func main() {
 	for _, channel := range followDataList.Data {
 		if channel.Type == "live" {
 			channels = append(channels, item{
-				title: channel.UserName,
-				desc:  "",
+				title:    channel.UserName,
+				gameName: channel.GameName,
+				desc:     channel.Title,
 			})
 		}
 	}
 
+	ownStyles := newStyles()
 	m := model{
-		list: list.New(channels, list.NewDefaultDelegate(), 0, 0),
+		list: list.New(channels, itemDelegate{styles: ownStyles}, 0, 0),
 	}
 	m.list.Title = "Channels that are live"
 	program := tea.NewProgram(m)
@@ -158,8 +154,5 @@ func main() {
 		fmt.Printf("Whoops an error has occured: %v", err)
 		os.Exit(1)
 	}
-
-	selectedChannel := channel.(model).selectedChannel
-	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
-	mpvInstance.Start()
+	startMPVWithStream(channel)
 }
