@@ -43,16 +43,25 @@ type UserDataList struct {
 }
 
 type FollowData struct {
-	Total int `json:"total"`
-	Data  []struct {
-		BroadcasterID    string    `json:"broadcaster_id"`
-		BroadcasterLogin string    `json:"broadcaster_login"`
-		BroadcasterName  string    `json:"broadcaster_name"`
-		FollowedAt       time.Time `json:"followed_at"`
+	Data []struct {
+		ID           string    `json:"id"`
+		UserID       string    `json:"user_id"`
+		UserLogin    string    `json:"user_login"`
+		UserName     string    `json:"user_name"`
+		GameID       string    `json:"game_id"`
+		GameName     string    `json:"game_name"`
+		Type         string    `json:"type"`
+		Title        string    `json:"title"`
+		ViewerCount  int       `json:"viewer_count"`
+		StartedAt    time.Time `json:"started_at"`
+		Language     string    `json:"language"`
+		ThumbnailURL string    `json:"thumbnail_url"`
+		TagIds       []any     `json:"tag_ids"`
+		Tags         []string  `json:"tags"`
 	} `json:"data"`
 	Pagination struct {
 		Cursor string `json:"cursor"`
-	}
+	} `json:"pagination"`
 }
 
 type TokenFile struct {
@@ -84,46 +93,61 @@ func tokenLoad(path string) (TokenFile, error) {
 	return tokenFile, nil
 }
 
+func printFollowData(followData FollowData) {
+	count := 0
+	for _, ch := range followData.Data {
+		if ch.Type == "live" {
+			count += 1
+			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
+		}
+	}
+	fmt.Println("Count of live streams: ", count)
+}
+
 // TODO: Get pagination to work
-// TODO: Get just live channels because who cares about channels  that are not live lol xddddd
+// NOTE: You can load a stream with https://twitch.tv/<channel_name>
 func main() {
 	godotenv.Load()
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
-	// TokenFile does not exist
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
-		// tokens.json does not exist
-		_, err := os.Create(tokenFilePath)
-		if err != nil {
-			fmt.Println("err: ", err)
+		if err := saveToken(tokenFilePath, "", ""); err != nil {
+			fmt.Println("err creating token file:", err)
 		}
 	}
 
 	tokenFile, err := tokenLoad(tokenFilePath)
 	if err != nil {
-		fmt.Println("err: ", err)
-	}
-	if validateToken(tokenFile.AccessToken, clientID) {
-		// Use the tokens and user id
+		fmt.Println("err loading token file:", err)
 	}
 
-	userToken := getUserToken(clientID)
-	// userTokenFile, err := json.Marshal(&userToken.AccessToken)
-	// if err != nil {
-	// 	fmt.Println("err: ", err)
-	// }
-
-	authUser := getAuthenticatedUser(clientID, userToken)
-	// authTokenFile, err := json.Marshal(&authUser.ID)
-	// if err != nil {
-	// 	fmt.Println("err: ", err)
-	// }
-
-	followData := getFollowedChannels(authUser.ID, clientID, userToken)
-
-	_, err := json.MarshalIndent(followData, "", " ")
+	accessToken, userID, err := validateToken(tokenFile.AccessToken)
 	if err != nil {
+		fmt.Println("Need to re-auth:", err)
+
+		userToken := getUserToken(clientID)
+		if userToken.AccessToken == "" {
+			fmt.Println("Authentication failed.")
+			return
+		}
+
+		authUser := getAuthenticatedUser(clientID, userToken)
+		if authUser.ID == "" {
+			fmt.Println("Could not fetch user data.")
+			return
+		}
+
+		if err := saveToken(tokenFilePath, userToken.AccessToken, authUser.ID); err != nil {
+			fmt.Println("err saving token:", err)
+		}
+
+		followData := getFollowedChannels(authUser.ID, clientID, userToken)
+		printFollowData(followData)
 		return
 	}
+
+	fmt.Println("Token is valid, reusing saved session.")
+	followData := getFollowedChannels(userID, clientID, AccessToken{AccessToken: accessToken})
+	printFollowData(followData)
 }

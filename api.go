@@ -8,10 +8,10 @@ import (
 	"net/http"
 )
 
-const TWITCH_API_URL = "https://api.twitch.tv/helix/"
+const TwitchAPIURL= "https://api.twitch.tv/helix/"
 
 func getUserData(username, clientID string, appToken AccessToken) UserData {
-	req, err := http.NewRequest("GET", TWITCH_API_URL+"users", nil)
+	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)
 	if err != nil {
 		fmt.Println("error:", err)
 		return UserData{}
@@ -23,7 +23,6 @@ func getUserData(username, clientID string, appToken AccessToken) UserData {
 		req.URL.RawQuery = q.Encode()
 	}
 
-	// Add headers
 	req.Header.Set("Authorization", "Bearer "+appToken.AccessToken)
 	req.Header.Set("Client-Id", clientID)
 
@@ -36,8 +35,7 @@ func getUserData(username, clientID string, appToken AccessToken) UserData {
 	defer resp.Body.Close()
 
 	var userDataList UserDataList
-	err = json.NewDecoder(resp.Body).Decode(&userDataList)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&userDataList); err != nil {
 		fmt.Println("error decoding:", err)
 		return UserData{}
 	}
@@ -49,7 +47,7 @@ func getUserData(username, clientID string, appToken AccessToken) UserData {
 }
 
 func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowData {
-	req, err := http.NewRequest("GET", TWITCH_API_URL+"followed", nil)
+	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
 	if err != nil {
 		fmt.Println("error:", err)
 		return FollowData{}
@@ -85,7 +83,7 @@ func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowD
 }
 
 func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {
-	req, err := http.NewRequest("GET", TWITCH_API_URL+"users", nil)
+	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)
 	if err != nil {
 		fmt.Println("error:", err)
 		return UserData{}

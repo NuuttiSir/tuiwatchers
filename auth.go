@@ -9,31 +9,6 @@ import (
 	"time"
 )
 
-func getAppToken(clientID, clientSecret string) AccessToken {
-	resp, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
-		"client_id":     {clientID},
-		"client_secret": {clientSecret},
-		"grant_type":    {"client_credentials"},
-	})
-	if err != nil {
-		fmt.Println("error:", err)
-		return AccessToken{}
-	}
-	defer resp.Body.Close()
-
-	var accessToken AccessToken
-	err = json.NewDecoder(resp.Body).Decode(&accessToken)
-	if err != nil {
-		fmt.Println("error decoding:", err)
-		return AccessToken{}
-	}
-	return AccessToken{
-		AccessToken: accessToken.AccessToken,
-		ExpiresIn:   accessToken.ExpiresIn,
-		TokenType:   accessToken.TokenType,
-	}
-}
-
 func getUserToken(clientID string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/device", url.Values{
 		"client_id": {clientID},
@@ -46,16 +21,14 @@ func getUserToken(clientID string) AccessToken {
 	defer resp.Body.Close()
 
 	var deviceCode DeviceCodeResponse
-	err = json.NewDecoder(resp.Body).Decode(&deviceCode)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&deviceCode); err != nil {
 		fmt.Println("error decoding:", err)
 		return AccessToken{}
 	}
 
-	fmt.Println("Go to: ", deviceCode.VerificationURI)
-	fmt.Println("Input code: ", deviceCode.UserCode)
+	fmt.Println("Go to:", deviceCode.VerificationURI)
+	fmt.Println("Enter code:", deviceCode.UserCode)
 
-	var userToken AccessToken
 	for {
 		time.Sleep(time.Duration(deviceCode.Interval) * time.Second)
 
@@ -65,39 +38,37 @@ func getUserToken(clientID string) AccessToken {
 			"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
 		})
 		if err != nil {
-			fmt.Println("err: ", err)
+			fmt.Println("err:", err)
 			return AccessToken{}
 		}
+		defer resp.Body.Close()
 
-		err = json.NewDecoder(resp.Body).Decode(&userToken)
-		if err != nil {
-			fmt.Println("err: ", err)
+		var userToken AccessToken
+		if err := json.NewDecoder(resp.Body).Decode(&userToken); err != nil {
+			fmt.Println("err:", err)
 			return AccessToken{}
 		}
-		resp.Body.Close()
 
 		if userToken.AccessToken != "" {
-			break
+			return userToken
 		}
-		fmt.Println("Waiting for authorization... Trying again in 5 seconds")
+		fmt.Println("Waiting for authorization...")
 	}
-
-	return userToken
 }
 
-func validateToken(path, clientID string) (accessToken, userID string, err error) {
-	tokenFile, err := tokenLoad(path)
-	if err != nil {
-		return "", "", err
-	}
+type validateResponse struct {
+	ClientID  string `json:"client_id"`
+	Login     string `json:"login"`
+	UserID    string `json:"user_id"`
+	ExpiresIn int    `json:"expires_in"`
+}
 
-	fmt.Println(tokenFile.AccessToken)
-
+func validateToken(accessTokenParam string) (accessToken, userID string, err error) {
 	req, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
 	if err != nil {
 		return "", "", err
 	}
-	req.Header.Set("Authorization", "OAuth"+tokenFile.AccessToken)
+	req.Header.Set("Authorization", "OAuth "+accessTokenParam)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -106,19 +77,14 @@ func validateToken(path, clientID string) (accessToken, userID string, err error
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		fmt.Println("OK")
-		// token is valid
-		fmt.Println("Token is still valid")
-	} else {
-		fmt.Println("EI OK")
-		// toklen is invalid/expired
-		fmt.Println("Token not valid")
-		// Prompt to re-auth
-		fmt.Println("lets reauth to get token")
-		getUserToken(clientID)
-
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("token invalid or expired (status %d)", resp.StatusCode)
 	}
-	fmt.Println("TOKENS OK")
-	return tokenFile.AccessToken, tokenFile.UserID, nil
+
+	var validated validateResponse
+	if err := json.NewDecoder(resp.Body).Decode(&validated); err != nil {
+		return "", "", fmt.Errorf("error decoding validate response: %w", err)
+	}
+
+	return accessTokenParam, validated.UserID, nil
 }
