@@ -1,16 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
 	"github.com/joho/godotenv"
 )
-
-const TwitchOauthURL = "https://id.twitch.tv/oauth2/"
 
 type DeviceCodeResponse struct {
 	DeviceCode      string `json:"device_code"`
@@ -43,22 +43,24 @@ type UserDataList struct {
 }
 
 type FollowData struct {
-	Data []struct {
-		ID           string    `json:"id"`
-		UserID       string    `json:"user_id"`
-		UserLogin    string    `json:"user_login"`
-		UserName     string    `json:"user_name"`
-		GameID       string    `json:"game_id"`
-		GameName     string    `json:"game_name"`
-		Type         string    `json:"type"`
-		Title        string    `json:"title"`
-		ViewerCount  int       `json:"viewer_count"`
-		StartedAt    time.Time `json:"started_at"`
-		Language     string    `json:"language"`
-		ThumbnailURL string    `json:"thumbnail_url"`
-		TagIds       []any     `json:"tag_ids"`
-		Tags         []string  `json:"tags"`
-	} `json:"data"`
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	UserLogin    string    `json:"user_login"`
+	UserName     string    `json:"user_name"`
+	GameID       string    `json:"game_id"`
+	GameName     string    `json:"game_name"`
+	Type         string    `json:"type"`
+	Title        string    `json:"title"`
+	ViewerCount  int       `json:"viewer_count"`
+	StartedAt    time.Time `json:"started_at"`
+	Language     string    `json:"language"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+	TagIds       []any     `json:"tag_ids"`
+	Tags         []string  `json:"tags"`
+}
+
+type FollowDataList struct {
+	Data       []FollowData `json:"data"`
 	Pagination struct {
 		Cursor string `json:"cursor"`
 	} `json:"pagination"`
@@ -69,33 +71,17 @@ type TokenFile struct {
 	UserID      string `json:"user_id"`
 }
 
-func saveToken(path, token, userID string) error {
-	file := TokenFile{
-		AccessToken: token,
-		UserID:      userID,
-	}
-	bytesWrite, err := json.MarshalIndent(file, "", " ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, bytesWrite, 0666)
+type validateResponse struct {
+	ClientID  string `json:"client_id"`
+	Login     string `json:"login"`
+	UserID    string `json:"user_id"`
+	ExpiresIn int    `json:"expires_in"`
 }
 
-func tokenLoad(path string) (TokenFile, error) {
-	bytesRead, err := os.ReadFile(path)
-	if err != nil {
-		return TokenFile{}, err
-	}
-	var tokenFile TokenFile
-	if err := json.Unmarshal(bytesRead, &tokenFile); err != nil {
-		return TokenFile{}, err
-	}
-	return tokenFile, nil
-}
-
-func printFollowData(followData FollowData) {
+func printFollowData(followDataList FollowDataList) {
 	count := 0
-	for _, ch := range followData.Data {
+	fmt.Println("Channels that are live")
+	for _, ch := range followDataList.Data {
 		if ch.Type == "live" {
 			count += 1
 			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
@@ -111,6 +97,7 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
+	// Check if tokens.json exists and if not make the file
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
 		if err := saveToken(tokenFilePath, "", ""); err != nil {
 			fmt.Println("err creating token file:", err)
@@ -122,6 +109,7 @@ func main() {
 		fmt.Println("err loading token file:", err)
 	}
 
+	// TODO: Change to two funcs as right now validateToken does two things
 	accessToken, userID, err := validateToken(tokenFile.AccessToken)
 	if err != nil {
 		fmt.Println("Need to re-auth:", err)
@@ -142,12 +130,36 @@ func main() {
 			fmt.Println("err saving token:", err)
 		}
 
-		followData := getFollowedChannels(authUser.ID, clientID, userToken)
-		printFollowData(followData)
+		followDataList := getFollowedChannels(authUser.ID, clientID, userToken)
+		printFollowData(followDataList)
 		return
 	}
 
 	fmt.Println("Token is valid, reusing saved session.")
-	followData := getFollowedChannels(userID, clientID, AccessToken{AccessToken: accessToken})
-	printFollowData(followData)
+	followDataList := getFollowedChannels(userID, clientID, AccessToken{AccessToken: accessToken})
+
+	var channels []list.Item
+	for _, channel := range followDataList.Data {
+		if channel.Type == "live" {
+			channels = append(channels, item{
+				title: channel.UserName,
+				desc:  "",
+			})
+		}
+	}
+
+	m := model{
+		list: list.New(channels, list.NewDefaultDelegate(), 0, 0),
+	}
+	m.list.Title = "Channels that are live"
+	program := tea.NewProgram(m)
+	channel, err := program.Run()
+	if err != nil {
+		fmt.Printf("Whoops an error has occured: %v", err)
+		os.Exit(1)
+	}
+
+	selectedChannel := channel.(model).selectedChannel
+	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
+	mpvInstance.Start()
 }

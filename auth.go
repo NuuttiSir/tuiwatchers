@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const TwitchOauthURL = "https://id.twitch.tv/oauth2/"
+
 func getUserToken(clientID string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/device", url.Values{
 		"client_id": {clientID},
@@ -54,13 +56,6 @@ func getUserToken(clientID string) AccessToken {
 		}
 		fmt.Println("Waiting for authorization...")
 	}
-}
-
-type validateResponse struct {
-	ClientID  string `json:"client_id"`
-	Login     string `json:"login"`
-	UserID    string `json:"user_id"`
-	ExpiresIn int    `json:"expires_in"`
 }
 
 func validateToken(accessTokenParam string) (accessToken, userID string, err error) {

@@ -46,11 +46,11 @@ func getUserData(username, clientID string, appToken AccessToken) UserData {
 	return userDataList.Data[0]
 }
 
-func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowData {
+func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowDataList {
 	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
 	if err != nil {
 		fmt.Println("error:", err)
-		return FollowData{}
+		return FollowDataList{}
 	}
 
 	q := req.URL.Query()
@@ -64,22 +64,22 @@ func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowD
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("error:", err)
-		return FollowData{}
+		return FollowDataList{}
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println("follow error:", resp.Status, string(body))
-		return FollowData{}
+		return FollowDataList{}
 	}
 
-	var followData FollowData
-	if err := json.NewDecoder(resp.Body).Decode(&followData); err != nil {
+	var followDataList FollowDataList
+	if err := json.NewDecoder(resp.Body).Decode(&followDataList); err != nil {
 		fmt.Println("error decoding:", err)
-		return FollowData{}
+		return FollowDataList{}
 	}
-	return followData
+	return followDataList
 }
 
 func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {
