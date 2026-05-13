@@ -160,5 +160,6 @@ func main() {
 		os.Exit(1)
 	}
 
+	welcomeMessage()
 	startMPVWithStream(channel)
 }
