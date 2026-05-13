@@ -12,6 +12,8 @@ This is my attempt to make a command line twitch viewer with search and chat int
 
 ## Quick Start
 
+NEEDED mpv, yt-dlp app installs hopefully in the future
+
 ## Usage
 
 ## Contributing

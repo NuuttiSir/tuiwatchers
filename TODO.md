@@ -1,6 +1,6 @@
 # PROJECT TODOS
 
-1. Change validateToken to two funcs as ATM it does two things main.go
+1. Change validateToken to two funcs as ATM it does two things main.go DONE
 2. Add bubbletea pages to UI ui.go
 3. Get pagination to work on followed streams if there is large amount main.go
 4. Get twitch chat integration to work

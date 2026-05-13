@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const TwitchAPIURL= "https://api.twitch.tv/helix/"
+const TwitchAPIURL = "https://api.twitch.tv/helix/"
 
 func getUserData(username, clientID string, appToken AccessToken) UserData {
 	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)

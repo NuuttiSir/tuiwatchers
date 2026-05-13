@@ -97,6 +97,7 @@ func main() {
 
 	// Check if tokens.json exists and if not make the file
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
+		fmt.Println("tokens.json not found... Creating")
 		if err := saveToken(tokenFilePath, "", ""); err != nil {
 			fmt.Println("err creating token file:", err)
 		}
@@ -107,10 +108,8 @@ func main() {
 		fmt.Println("err loading token file:", err)
 	}
 
-	// TODO: Change to two funcs as right now validateToken does two things
-	accessToken, userID, err := validateToken(tokenFile.AccessToken)
-	if err != nil {
-		fmt.Println("Need to re-auth:", err)
+	if !validateToken(tokenFile.AccessToken) {
+		fmt.Println("Need to re-auth")
 
 		userToken := getUserToken(clientID)
 		if userToken.AccessToken == "" {
@@ -129,8 +128,13 @@ func main() {
 		}
 	}
 
+	tokenFile, err = tokenLoad(tokenFilePath)
+	if err != nil {
+		fmt.Println("err loading token file:", err)
+	}
+
 	fmt.Println("Token is valid, reusing saved session.")
-	followDataList := getFollowedChannels(userID, clientID, AccessToken{AccessToken: accessToken})
+	followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
 
 	var channels []list.Item
 	for _, channel := range followDataList.Data {
@@ -148,11 +152,13 @@ func main() {
 		list: list.New(channels, itemDelegate{styles: ownStyles}, 0, 0),
 	}
 	m.list.Title = "Channels that are live"
+
 	program := tea.NewProgram(m)
 	channel, err := program.Run()
 	if err != nil {
 		fmt.Printf("Whoops an error has occured: %v", err)
 		os.Exit(1)
 	}
+
 	startMPVWithStream(channel)
 }

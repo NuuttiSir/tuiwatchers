@@ -1,10 +1,31 @@
 @startuml
+<style>
+element {MinimumWidth 150}
+</style>
 
 start
 
-:Start application;
-:Choose stream to watch;
-:Application opens mpv player with the stream;
+*Start application from command line
+** Load .env
+** Get "CLIENT_ID" from .env
+
+if (tokens.json exists?) then (yes)
+else (no)
+    *Make "tokens.json"
+endif
+
+* Load token and userID from tokens.json
+
+if (Users tokens valid?) then (yes)
+    *Print "tokens valid,\nstarting application"
+else (no)
+    *validateTokens()
+    ** GET twitch validate api
+endif
+
+*Start application
+*Choose stream to watch
+*Application opens mpv player with the stream
 
 stop
 @enduml

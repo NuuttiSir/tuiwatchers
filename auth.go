@@ -58,28 +58,26 @@ func getUserToken(clientID string) AccessToken {
 	}
 }
 
-func validateToken(accessTokenParam string) (accessToken, userID string, err error) {
+func validateToken(accessTokenParam string) bool {
 	req, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
 	if err != nil {
-		return "", "", err
+		fmt.Println("err: ", err)
+		return false
 	}
 	req.Header.Set("Authorization", "OAuth "+accessTokenParam)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", "", err
+		fmt.Println("err: ", err)
+		return false
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("token invalid or expired (status %d)", resp.StatusCode)
+		fmt.Println("token invalid or expired", resp.StatusCode)
+		return false
 	}
 
-	var validated validateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&validated); err != nil {
-		return "", "", fmt.Errorf("error decoding validate response: %w", err)
-	}
-
-	return accessTokenParam, validated.UserID, nil
+	return true
 }
