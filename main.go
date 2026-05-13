@@ -96,10 +96,10 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
-
-	if os.Args[0] == "--chat" {
+	if len(os.Args) > 2 && os.Args[1] == "--chat" {
 		fmt.Println("CHAT")
-
+		//ClientID, BroadcasterID, UserID, AccessToken
+		spawnChatWindow(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
 	}
 
 	// Check if tokens.json exists and if not make the file
@@ -195,7 +195,7 @@ func main() {
 		close(done)
 	}()
 
-	// spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+	spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
 
 	// Wait for the websocket goroutine to finish before exiting
