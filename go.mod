@@ -1,4 +1,4 @@
-module tuiwatchers
+module github.com/NuuttiSir/tuiwatchers
 
 go 1.26.3
 
