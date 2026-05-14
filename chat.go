@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"os/exec"
 	"time"
 
 	"github.com/coder/websocket"
@@ -20,16 +20,16 @@ type Metadata struct {
 
 type MessagePayload struct {
 	Session *Session   `json:"session"`
-	Event   *ChatEvent `json:event"`
+	Event   *ChatEvent `json:"event"`
 }
 
 type Session struct {
-	ID                      string      `json:"id"`
-	Status                  string      `json:"status"`
-	ConnectedAt             time.Time   `json:"connected_at"`
-	KeepaliveTimeoutSeconds int         `json:"keepalive_timeout_seconds"`
-	ReconnectURL            interface{} `json:"reconnect_url"`
-	RecoveryURL             interface{} `json:"recovery_url"`
+	ID                      string    `json:"id"`
+	Status                  string    `json:"status"`
+	ConnectedAt             time.Time `json:"connected_at"`
+	KeepaliveTimeoutSeconds int       `json:"keepalive_timeout_seconds"`
+	ReconnectURL            any       `json:"reconnect_url"`
+	RecoveryURL             any       `json:"recovery_url"`
 }
 
 type ServerMessage struct {
@@ -54,7 +54,8 @@ type SubscriptionRequest struct {
 	Transport Transport `json:"transport"`
 }
 
-// A chat message fragment, as Twitch splits messages into fragments
+// Fragment is a fragment of a chat message
+// Twitch splits messages into fragments
 type Fragment struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
@@ -65,7 +66,7 @@ type ChatMessage struct {
 	Fragments []Fragment `json:"fragments"`
 }
 
-// The event data for a channel.chat.message notification
+// ChatEvent is a event data for channel.chat.message notification
 type ChatEvent struct {
 	BroadcasterUserID    string      `json:"broadcaster_user_id"`
 	BroadcasterUserLogin string      `json:"broadcaster_user_login"`
@@ -184,5 +185,16 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 			// Twitch wants us to reconnect, log it for now for funsies
 			fmt.Println("Twitch has requested reconnect")
 		}
+	}
+}
+
+func spawnChatWindow(clientID, broadcasterID, userID, accessToken string) {
+	fmt.Println("In chat func")
+
+	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat "+clientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("Terminal window opening error", err)
+		return
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"charm.land/bubbles/v2/list"
@@ -96,7 +95,8 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
-	if len(os.Args) >= 2 && os.Args[1] == "--chat" {
+	switch os.Args[1] {
+	case "--chat":
 		fmt.Println("CHAT")
 		fmt.Println("Starting chat window")
 
@@ -175,7 +175,7 @@ func main() {
 	program := tea.NewProgram(m)
 	selectedChannel, err := program.Run()
 	if err != nil {
-		fmt.Printf("Whoops an error has occured: %v", err)
+		fmt.Printf("Whoops an error has occurred: %v", err)
 		os.Exit(1)
 	}
 
@@ -202,16 +202,4 @@ func main() {
 
 	spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
-
-}
-
-func spawnChatWindow(clientID, broadcasterID, userID, accessToken string) {
-	fmt.Println("In chat func")
-
-	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat " + clientID + " " + broadcasterID + " " + userID + " " + accessToken + ";exec bash")
-	err := cmd.Start()
-	if err != nil {
-		fmt.Println("Terminal window opening error", err)
-		return
-	}
 }
