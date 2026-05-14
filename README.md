@@ -2,11 +2,17 @@
 
 ## Title
 
-TuiWatchers, because its TUI and we watch streamers PEPEGA
+TuiWatchers, because its TUI ( kinda :D ) and we watch streamers
 
 ## Description
 
-This is my attempt to make a command line twitch viewer with search and chat integration
+<!-- TODO: ADD GIF TO SHOW APP IN ACTION! -->
+
+TuiWatchers is an different way to watch your favorite streamers in the
+terminal, well kind of. ( No way to watch videos straight in terminal, yet ;) )
+
+TuiWatchers is simple and sometimes the better way to consume different games
+and genres.
 
 ## Motivation
 
@@ -17,4 +23,3 @@ NEEDED mpv, yt-dlp app installs hopefully in the future
 ## Usage
 
 ## Contributing
-
