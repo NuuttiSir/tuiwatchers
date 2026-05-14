@@ -115,11 +115,6 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 		return
 	}
 	defer resp.Body.Close()
-
-	// Log the response for now
-	respBody, _ := io.ReadAll(resp.Body)
-	fmt.Println("Subscribe status:", resp.Status)
-	fmt.Println("Subscribe body:", string(respBody))
 }
 
 func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
@@ -163,7 +158,6 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 				continue
 			}
 			sessionID := serverMessage.MessagePayload.Session.ID
-			fmt.Println("Connected! Session ID is ", sessionID)
 
 			// SUBSCRIBE immidiately with the SESSION ID
 			postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken)
