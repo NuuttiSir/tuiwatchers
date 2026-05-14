@@ -96,10 +96,22 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
-	if len(os.Args) > 2 && os.Args[1] == "--chat" {
+	if len(os.Args) >= 2 && os.Args[1] == "--chat" {
 		fmt.Println("CHAT")
-		//ClientID, BroadcasterID, UserID, AccessToken
-		spawnChatWindow(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+		fmt.Println("Starting chat window")
+
+		// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+		done := make(chan struct{})
+		go func() {
+			//ClientID, BroadcasterID, UserID, AccessToken
+			connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+			close(done)
+		}()
+
+		// Wait for the websocket goroutine to finish before exiting
+		<-done
+
+		return
 	}
 
 	// Check if tokens.json exists and if not make the file
@@ -188,21 +200,18 @@ func main() {
 		return
 	}
 
-	// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
-	done := make(chan struct{})
-	go func() {
-		connectAndListen(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
-		close(done)
-	}()
-
 	spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
 
-	// Wait for the websocket goroutine to finish before exiting
-	<-done
 }
 
-func spawnChatWindow(clientID, broadcasterID, userID, accesstoken string) {
-	cmd := exec.Command("./tuiwatchers --chat %s %s %s %s", clientID, broadcasterID, userID, accesstoken)
-	cmd.Start()
+func spawnChatWindow(clientID, broadcasterID, userID, accessToken string) {
+	fmt.Println("In chat func")
+
+	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat " + clientID + " " + broadcasterID + " " + userID + " " + accessToken + ";exec bash")
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("Terminal window opening error", err)
+		return
+	}
 }
