@@ -95,23 +95,25 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
-	switch os.Args[1] {
-	case "--chat":
-		fmt.Println("CHAT")
-		fmt.Println("Starting chat window")
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "--chat":
+			fmt.Println("CHAT")
+			fmt.Println("Starting chat window")
 
-		// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
-		done := make(chan struct{})
-		go func() {
-			//ClientID, BroadcasterID, UserID, AccessToken
-			connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
-			close(done)
-		}()
+			// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+			done := make(chan struct{})
+			go func() {
+				//ClientID, BroadcasterID, UserID, AccessToken
+				connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+				close(done)
+			}()
 
-		// Wait for the websocket goroutine to finish before exiting
-		<-done
+			// Wait for the websocket goroutine to finish before exiting
+			<-done
 
-		return
+			return
+		}
 	}
 
 	// Check if tokens.json exists and if not make the file
@@ -167,10 +169,20 @@ func main() {
 	}
 
 	ownStyles := newStyles()
+
+	const (
+		defaultWidth = 20
+		listHeight   = 10
+	)
+
+	l := list.New(channels, itemDelegate{styles: ownStyles}, defaultWidth, listHeight)
+	l.Title = "Channels that are live"
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+
 	m := model{
-		list: list.New(channels, itemDelegate{styles: ownStyles}, 0, 0),
+		list: l,
 	}
-	m.list.Title = "Channels that are live"
 
 	program := tea.NewProgram(m)
 	selectedChannel, err := program.Run()

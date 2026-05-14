@@ -1,4 +1,4 @@
-// TODO: pages
+// TODO: MAKE THE ITEMS BIGGER TO SEE
 package main
 
 import (
@@ -26,12 +26,18 @@ type itemDelegate struct {
 type itemStyles struct {
 	item         lipgloss.Style
 	selectedItem lipgloss.Style
+	pagination   lipgloss.Style
+	help         lipgloss.Style
+	quitText     lipgloss.Style
 }
 
 func newStyles() itemStyles {
 	var s itemStyles
 	s.item = lipgloss.NewStyle().MarginLeft(2)
 	s.selectedItem = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	s.pagination = list.DefaultStyles(true).PaginationStyle.PaddingLeft(4)
+	s.help = list.DefaultStyles(true).HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	s.quitText = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 	return s
 }
 
@@ -45,7 +51,8 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf("%d. Streamer: %s\nGame: %s\nDescription: %s", index+1, i.title, i.gameName, i.desc)
+	str := fmt.Sprintf("%d. Streamer: %s | Game: %s | Description: %s", index+1, i.title, i.gameName, i.desc)
+
 	fn := d.styles.item.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {

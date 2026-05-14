@@ -9,6 +9,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
+// TODO: MAKE STREAM WINDOW START ON THE LEFT SIDE OF THE MONITOR
+// GPT SAID THIS: mpv --gpu-context=x11egl --geometry=50%x100%+0+0 <video>
+// SEEMED TO WORK
 func startMPVWithStream(channel tea.Model) error {
 	selectedChannel := channel.(model).selectedChannel
 	selectedChannelGame := channel.(model).gameName
