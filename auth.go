@@ -14,7 +14,7 @@ const TwitchOauthURL = "https://id.twitch.tv/oauth2/"
 func getUserToken(clientID string) AccessToken {
 	resp, err := http.PostForm("https://id.twitch.tv/oauth2/device", url.Values{
 		"client_id": {clientID},
-		"scopes":    {"user:read:follows"},
+		"scopes":    {"user:read:follows user:write:chat user:read:chat chat:read"},
 	})
 	if err != nil {
 		fmt.Println("error:", err)

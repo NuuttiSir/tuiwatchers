@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
 	"charm.land/bubbles/v2/list"
@@ -95,6 +96,12 @@ func main() {
 	clientID := os.Getenv("CLIENT_ID")
 	tokenFilePath := "tokens.json"
 
+	if len(os.Args) > 2 && os.Args[1] == "--chat" {
+		fmt.Println("CHAT")
+		//ClientID, BroadcasterID, UserID, AccessToken
+		spawnChatWindow(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+	}
+
 	// Check if tokens.json exists and if not make the file
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
 		fmt.Println("tokens.json not found... Creating")
@@ -154,11 +161,48 @@ func main() {
 	m.list.Title = "Channels that are live"
 
 	program := tea.NewProgram(m)
-	channel, err := program.Run()
+	selectedChannel, err := program.Run()
 	if err != nil {
 		fmt.Printf("Whoops an error has occured: %v", err)
 		os.Exit(1)
 	}
 
-	startMPVWithStream(channel)
+	finalModel, ok := selectedChannel.(model)
+	if !ok {
+		fmt.Println("Could not cast model")
+		return
+	}
+
+	// Get the broadcaster ID from the selected channel
+	// We search followDataList to match the channel the user picked in the UI
+	var broadcasterID string
+	for _, followedChannel := range followDataList.Data {
+		if followedChannel.UserName == finalModel.selectedChannel {
+			broadcasterID = followedChannel.UserID
+			break
+		}
+	}
+
+	if broadcasterID == "" {
+		fmt.Println("Could not find broadcaster ID for selected channel")
+		return
+	}
+
+	// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+	done := make(chan struct{})
+	go func() {
+		connectAndListen(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+		close(done)
+	}()
+
+	spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+	startMPVWithStream(selectedChannel)
+
+	// Wait for the websocket goroutine to finish before exiting
+	<-done
+}
+
+func spawnChatWindow(clientID, broadcasterID, userID, accesstoken string) {
+	cmd := exec.Command("./tuiwatchers --chat %s %s %s %s", clientID, broadcasterID, userID, accesstoken)
+	cmd.Start()
 }
