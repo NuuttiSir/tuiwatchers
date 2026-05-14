@@ -39,23 +39,16 @@ So enjoy, please <3
 
 ### 2. Install TuiWatchers using Go toolchain
 
-'''bash
-Install TuiWatchers
-go install github.com/NuuttiSir/tuiwatchers@latest
-'''
+    go install github.com/NuuttiSir/tuiwatchers@latest
 
 ### 3. Install from github
 
-'''bash
-git clone <url>
-cd tuiwatchers
-'''
+    git clone <url>
+    cd tuiwatchers
 
 ### 4. RUN THE PROGRAM
 
-'''bash
-./tuiwatchers
-'''
+    ./tuiwatchers
 
 ## Usage
 
@@ -65,17 +58,14 @@ cd tuiwatchers
 
 ### Clone the repo
 
-'''bash
-git clone <url>
-cd tuiwatchers
-'''
+    git clone <url>
+    cd tuiwatchers
 
 ### Build the compiled binary
 
-'''bash
-go build
-'''
+    go build
 
 ### Submit pull request
 
-If you would like to contribute, please fork the repository and open a pull request to the 'main' branch. Thankz<3
+If you would like to contribute, please fork the repository and open a pull
+request to the 'main' branch. Thankz<3
