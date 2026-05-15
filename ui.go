@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
@@ -14,9 +16,9 @@ import (
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
 
 type item struct {
-	title    string
-	gameName string
-	desc     string
+	title     string
+	gameName  string
+	viewCount int
 }
 
 type itemDelegate struct {
@@ -25,6 +27,8 @@ type itemDelegate struct {
 
 type itemStyles struct {
 	item         lipgloss.Style
+	textInput    textinput.Model
+	spinner      spinner.Model
 	selectedItem lipgloss.Style
 	pagination   lipgloss.Style
 	help         lipgloss.Style
@@ -51,7 +55,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf("%d. Streamer: %s | Game: %s | Description: %s", index+1, i.title, i.gameName, i.desc)
+	str := fmt.Sprintf("%d. Streamer: %s | Game: %s | Viewer Count: %d", index+1, i.title, i.gameName, i.viewCount)
 
 	fn := d.styles.item.Render
 	if index == m.Index() {
@@ -102,3 +106,10 @@ func (m model) View() tea.View {
 	v.AltScreen = true
 	return v
 }
+
+// Sub-Views
+
+// Auth view
+// func authView(m model) {
+//
+// }

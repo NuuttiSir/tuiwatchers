@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -70,58 +69,59 @@ type TokenFile struct {
 	UserID      string `json:"user_id"`
 }
 
-type validateResponse struct {
-	ClientID  string `json:"client_id"`
-	Login     string `json:"login"`
-	UserID    string `json:"user_id"`
-	ExpiresIn int    `json:"expires_in"`
+// type validateResponse struct {
+// 	ClientID  string `json:"client_id"`
+// 	Login     string `json:"login"`
+// 	UserID    string `json:"user_id"`
+// 	ExpiresIn int    `json:"expires_in"`
+// }
+
+// func printFollowData(followDataList FollowDataList) {
+// 	count := 0
+// 	fmt.Println("Channels that are live")
+// 	for _, ch := range followDataList.Data {
+// 		if ch.Type == "live" {
+// 			count += 1
+// 			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
+// 		}
+// 	}
+// 	fmt.Println("Count of live streams: ", count)
+// }
+
+func openChat() {
+	fmt.Println("CHAT")
+	fmt.Println("Starting chat window")
+
+	// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+	done := make(chan struct{})
+	go func() {
+		//ClientID, BroadcasterID, UserID, AccessToken
+		connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+		close(done)
+	}()
+
+	// Wait for the websocket goroutine to finish before exiting
+	<-done
 }
 
-func printFollowData(followDataList FollowDataList) {
-	count := 0
-	fmt.Println("Channels that are live")
-	for _, ch := range followDataList.Data {
-		if ch.Type == "live" {
-			count += 1
-			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
-		}
-	}
-	fmt.Println("Count of live streams: ", count)
-}
-
-// TODO: Get pagination to work
 func main() {
-	godotenv.Load()
-	clientID := os.Getenv("CLIENT_ID")
+	// Client ID can be public
+	CLIENT_ID := "5kft01sjf8paema7idj04jakt7hlym"
 	tokenFilePath := "tokens.json"
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "--chat":
-			fmt.Println("CHAT")
-			fmt.Println("Starting chat window")
-
-			// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
-			done := make(chan struct{})
-			go func() {
-				//ClientID, BroadcasterID, UserID, AccessToken
-				connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
-				close(done)
-			}()
-
-			// Wait for the websocket goroutine to finish before exiting
-			<-done
-
+			openChat()
 			return
 		}
 	}
 
 	// Check if tokens.json exists and if not make the file
-	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
-		fmt.Println("tokens.json not found... Creating")
-		if err := saveToken(tokenFilePath, "", ""); err != nil {
-			fmt.Println("err creating token file:", err)
-		}
+	err := checkTokenFile(tokenFilePath)
+	if err != nil {
+		fmt.Println("Error checking token file: ", err)
+		return
 	}
 
 	tokenFile, err := tokenLoad(tokenFilePath)
@@ -132,13 +132,13 @@ func main() {
 	if !validateToken(tokenFile.AccessToken) {
 		fmt.Println("Need to re-auth")
 
-		userToken := getUserToken(clientID)
+		userToken := getUserToken(CLIENT_ID)
 		if userToken.AccessToken == "" {
 			fmt.Println("Authentication failed.")
 			return
 		}
 
-		authUser := getAuthenticatedUser(clientID, userToken)
+		authUser := getAuthenticatedUser(CLIENT_ID, userToken)
 		if authUser.ID == "" {
 			fmt.Println("Could not fetch user data.")
 			return
@@ -155,15 +155,15 @@ func main() {
 	}
 
 	fmt.Println("Token is valid, reusing saved session.")
-	followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+	followDataList := getFollowedChannels(tokenFile.UserID, CLIENT_ID, AccessToken{AccessToken: tokenFile.AccessToken})
 
 	var channels []list.Item
 	for _, channel := range followDataList.Data {
 		if channel.Type == "live" {
 			channels = append(channels, item{
-				title:    channel.UserName,
-				gameName: channel.GameName,
-				desc:     channel.Title,
+				title:     channel.UserName,
+				gameName:  channel.GameName,
+				viewCount: channel.ViewerCount,
 			})
 		}
 	}
@@ -212,6 +212,6 @@ func main() {
 		return
 	}
 
-	spawnChatWindow(clientID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+	spawnChatWindow(CLIENT_ID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
 }

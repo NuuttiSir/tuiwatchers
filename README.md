@@ -1,7 +1,5 @@
 # TuiWatchers
 
-## Title
-
 TuiWatchers, because its TUI ( kinda :D ) and we watch streamers
 
 ## Description

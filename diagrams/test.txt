@@ -1,0 +1,165 @@
+@startuml
+namespace tuiwatchers {
+    class "AccessToken" << (S,Aquamarine) >> {
+        + AccessToken string
+        + ExpiresIn int
+        + TokenType string
+
+    }
+    class "ChatEvent" << (S,Aquamarine) >> {
+        + BroadcasterUserID string
+        + BroadcasterUserLogin string
+        + BroadcasterUserName string
+        + ChatterUserID string
+        + ChatterUserLogin string
+        + ChatterUserName string
+        + MessageID string
+        + Message ChatMessage
+        + Color string
+
+    }
+    class "ChatMessage" << (S,Aquamarine) >> {
+        + Text string
+        + Fragments []Fragment
+
+    }
+    class "Condition" << (S,Aquamarine) >> {
+        + BroadcasterUserID string
+        + UserID string
+
+    }
+    class "DeviceCodeResponse" << (S,Aquamarine) >> {
+        + DeviceCode string
+        + Interval int
+        + UserCode string
+        + VerificationURI string
+
+    }
+    class "FollowData" << (S,Aquamarine) >> {
+        + ID string
+        + UserID string
+        + UserLogin string
+        + UserName string
+        + GameID string
+        + GameName string
+        + Type string
+        + Title string
+        + ViewerCount int
+        + StartedAt time.Time
+        + Language string
+        + ThumbnailURL string
+        + TagIds []any
+        + Tags []string
+
+    }
+    class "FollowDataList" << (S,Aquamarine) >> {
+        + Data []FollowData
+        + Pagination <font color=blue>struct</font>{string}
+
+    }
+    class "Fragment" << (S,Aquamarine) >> {
+        + Type string
+        + Text string
+
+    }
+    class "MessagePayload" << (S,Aquamarine) >> {
+        + Session *Session
+        + Event *ChatEvent
+
+    }
+    class "Metadata" << (S,Aquamarine) >> {
+        + MessageID string
+        + MessageType string
+        + MessageTimestamp time.Time
+
+    }
+    class "ServerMessage" << (S,Aquamarine) >> {
+        + Metadata Metadata
+        + MessagePayload MessagePayload
+
+    }
+    class "Session" << (S,Aquamarine) >> {
+        + ID string
+        + Status string
+        + ConnectedAt time.Time
+        + KeepaliveTimeoutSeconds int
+        + ReconnectURL any
+        + RecoveryURL any
+
+    }
+    class "SubscriptionRequest" << (S,Aquamarine) >> {
+        + Type string
+        + Version string
+        + Condition Condition
+        + Transport Transport
+
+    }
+    class "TokenFile" << (S,Aquamarine) >> {
+        + AccessToken string
+        + UserID string
+
+    }
+    class "Transport" << (S,Aquamarine) >> {
+        + Method string
+        + SessionID string
+
+    }
+    class "UserData" << (S,Aquamarine) >> {
+        + BroadcasterType string
+        + CreatedAt time.Time
+        + Description string
+        + DisplayName string
+        + ID string
+        + Login string
+        + OfflineImageURL string
+        + ProfileImageURL string
+        + Type string
+        + ViewCount int
+
+    }
+    class "UserDataList" << (S,Aquamarine) >> {
+        + Data []UserData
+
+    }
+    class "item" << (S,Aquamarine) >> {
+        - title string
+        - gameName string
+        - viewCount int
+
+        + FilterValue() string
+
+    }
+    class "itemDelegate" << (S,Aquamarine) >> {
+        - styles itemStyles
+
+        + Height() int
+        + Spacing() int
+        + Update(_ v2.Msg, _ *list.Model) v2.Cmd
+        + Render(w io.Writer, m list.Model, index int, listItem list.Item) 
+
+    }
+    class "itemStyles" << (S,Aquamarine) >> {
+        - item lipgloss.Style
+        - textInput textinput.Model
+        - spinner spinner.Model
+        - selectedItem lipgloss.Style
+        - pagination lipgloss.Style
+        - help lipgloss.Style
+        - quitText lipgloss.Style
+
+    }
+    class "model" << (S,Aquamarine) >> {
+        - list list.Model
+        - selectedChannel string
+        - gameName string
+
+        + Init() v2.Cmd
+        + Update(msg v2.Msg) (v2.Model, v2.Cmd)
+        + View() v2.View
+
+    }
+}
+
+
+
+@enduml
