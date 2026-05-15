@@ -110,6 +110,3 @@ func (m model) View() tea.View {
 // Sub-Views
 
 // Auth view
-// func authView(m model) {
-//
-// }
