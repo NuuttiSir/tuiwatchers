@@ -17,7 +17,7 @@ import (
 // on ad break
 func startMPVWithStream(channel tea.Model) error {
 	selectedChannel := channel.(model).selectedChannel
-	selectedChannelGame := channel.(model).gameName
+	selectedChannelGame := channel.(model).channelList[0].gameName
 
 	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
 	fmt.Printf("Starting mpv instance watching channel %s who is streaming %s", selectedChannel, selectedChannelGame)

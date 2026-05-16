@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"charm.land/bubbles/v2/list"
+	_ "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 )
 
@@ -156,10 +156,10 @@ func main() {
 	fmt.Println("Token is valid, reusing saved session.")
 	followDataList := getFollowedChannels(tokenFile.UserID, CLIENT_ID, AccessToken{AccessToken: tokenFile.AccessToken})
 
-	var channels []list.Item
+	var channels []channelInfo
 	for _, channel := range followDataList.Data {
 		if channel.Type == "live" {
-			channels = append(channels, item{
+			channels = append(channels, channelInfo{
 				title:     channel.UserName,
 				gameName:  channel.GameName,
 				viewCount: channel.ViewerCount,
@@ -167,20 +167,14 @@ func main() {
 		}
 	}
 
-	ownStyles := newStyles()
 
 	const (
 		defaultWidth = 20
 		listHeight   = 10
 	)
 
-	l := list.New(channels, itemDelegate{styles: ownStyles}, defaultWidth, listHeight)
-	l.Title = "Channels that are live"
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-
 	m := model{
-		list: l,
+		channelList: channels,
 	}
 
 	program := tea.NewProgram(m)
