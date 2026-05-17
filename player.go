@@ -16,8 +16,8 @@ import (
 // TODO: For memes start a soap carving video or subway surfers when stream is
 // on ad break
 func startMPVWithStream(channel tea.Model) error {
-	selectedChannel := channel.(model).selectedChannel
-	selectedChannelGame := channel.(model).channelList[0].gameName
+	selectedChannel := channel.(Model).SelectedChannel
+	selectedChannelGame := channel.(Model).ChannelList[0].GameName
 
 	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
 	fmt.Printf("Starting mpv instance watching channel %s who is streaming %s", selectedChannel, selectedChannelGame)

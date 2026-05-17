@@ -104,10 +104,6 @@ func openChat() {
 }
 
 func main() {
-	// Client ID can be public
-	CLIENT_ID := "5kft01sjf8paema7idj04jakt7hlym"
-	tokenFilePath := "tokens.json"
-
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "--chat":
@@ -116,95 +112,31 @@ func main() {
 		}
 	}
 
-	// Check if tokens.json exists and if not make the file
-	err := checkTokenFile(tokenFilePath)
-	if err != nil {
-		fmt.Println("Error checking token file: ", err)
-		return
-	}
-
-	tokenFile, err := tokenLoad(tokenFilePath)
-	if err != nil {
-		fmt.Println("err loading token file:", err)
-	}
-
-	if !validateToken(tokenFile.AccessToken) {
-		fmt.Println("Need to re-auth")
-
-		userToken := getUserToken(CLIENT_ID)
-		if userToken.AccessToken == "" {
-			fmt.Println("Authentication failed.")
-			return
-		}
-
-		authUser := getAuthenticatedUser(CLIENT_ID, userToken)
-		if authUser.ID == "" {
-			fmt.Println("Could not fetch user data.")
-			return
-		}
-
-		if err := saveToken(tokenFilePath, userToken.AccessToken, authUser.ID); err != nil {
-			fmt.Println("err saving token:", err)
-		}
-	}
-
-	tokenFile, err = tokenLoad(tokenFilePath)
-	if err != nil {
-		fmt.Println("err loading token file:", err)
-	}
-
-	fmt.Println("Token is valid, reusing saved session.")
-	followDataList := getFollowedChannels(tokenFile.UserID, CLIENT_ID, AccessToken{AccessToken: tokenFile.AccessToken})
-
-	var channels []channelInfo
-	for _, channel := range followDataList.Data {
-		if channel.Type == "live" {
-			channels = append(channels, channelInfo{
-				title:     channel.UserName,
-				gameName:  channel.GameName,
-				viewCount: channel.ViewerCount,
-			})
-		}
-	}
-
-
-	const (
-		defaultWidth = 20
-		listHeight   = 10
-	)
-
-	m := model{
-		channelList: channels,
-	}
-
-	program := tea.NewProgram(m)
+	model := initialModel()
+	program := tea.NewProgram(model)
 	selectedChannel, err := program.Run()
 	if err != nil {
 		fmt.Printf("Whoops an error has occurred: %v", err)
 		os.Exit(1)
 	}
 
-	finalModel, ok := selectedChannel.(model)
+	finalModel, ok := selectedChannel.(Model)
 	if !ok {
 		fmt.Println("Could not cast model")
 		return
 	}
 
-	// Get the broadcaster ID from the selected channel
-	// We search followDataList to match the channel the user picked in the UI
-	var broadcasterID string
-	for _, followedChannel := range followDataList.Data {
-		if followedChannel.UserName == finalModel.selectedChannel {
-			broadcasterID = followedChannel.UserID
-			break
-		}
+	if finalModel.Err != nil {
+		fmt.Println(finalModel.Err)
+		return
 	}
 
+	broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
 	if broadcasterID == "" {
 		fmt.Println("Could not find broadcaster ID for selected channel")
 		return
 	}
 
-	spawnChatWindow(CLIENT_ID, broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+	spawnChatWindow(clientID, broadcasterID, finalModel.TokenFile.UserID, finalModel.TokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
 }
