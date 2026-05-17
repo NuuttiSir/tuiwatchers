@@ -137,6 +137,6 @@ func main() {
 		return
 	}
 
-	spawnChatWindow(clientID, broadcasterID, finalModel.TokenFile.UserID, finalModel.TokenFile.AccessToken)
+	spawnChatWindow(broadcasterID, finalModel.TokenFile.UserID, finalModel.TokenFile.AccessToken)
 	startMPVWithStream(selectedChannel)
 }
