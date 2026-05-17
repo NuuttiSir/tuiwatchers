@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 )
 
@@ -27,4 +29,14 @@ func tokenLoad(path string) (TokenFile, error) {
 		return TokenFile{}, err
 	}
 	return tokenFile, nil
+}
+
+func checkTokenFile(tokenFilePath string) error {
+	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
+		fmt.Println("tokens.json not found... Creating")
+		if err := saveToken(tokenFilePath, "", ""); err != nil {
+			fmt.Println("err creating token file:", err)
+		}
+	}
+	return nil
 }

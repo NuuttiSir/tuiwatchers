@@ -1,104 +1,213 @@
 // TODO: MAKE THE ITEMS BIGGER TO SEE
+// TODO: MAKE PAGES
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"strings"
 
-	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+const (
+	tokenFilePath = "tokens.json"
+	clientID      = "5kft01sjf8paema7idj04jakt7hlym"
+)
 
-type item struct {
-	title    string
-	gameName string
-	desc     string
+type page int
+
+const (
+	pageAuthentication = iota
+	pageStreams
+	pageQuitting
+)
+
+type Model struct {
+	State           page
+	Spinner         spinner.Model
+	Err             error
+	ChannelList     []ChannelInfo
+	SelectedIndex   int
+	SelectedChannel string
+	BroadcasterIDs  map[string]string
+	TokenFile       TokenFile
 }
 
-type itemDelegate struct {
-	styles itemStyles
+type ChannelInfo struct {
+	BroadcasterName string
+	GameName        string
+	ViewCount       int
 }
 
-type itemStyles struct {
-	item         lipgloss.Style
-	selectedItem lipgloss.Style
-	pagination   lipgloss.Style
-	help         lipgloss.Style
-	quitText     lipgloss.Style
+type AuthSuccessMessage struct {
+	ChannelList    []ChannelInfo
+	BroadcasterIDs map[string]string
+	TokenFile      TokenFile
 }
 
-func newStyles() itemStyles {
-	var s itemStyles
-	s.item = lipgloss.NewStyle().MarginLeft(2)
-	s.selectedItem = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	s.pagination = list.DefaultStyles(true).PaginationStyle.PaddingLeft(4)
-	s.help = list.DefaultStyles(true).HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	s.quitText = lipgloss.NewStyle().Margin(1, 0, 2, 4)
-	return s
+type AuthErrorMessage struct {
+	Err error
 }
 
-func (i item) FilterValue() string                             { return "" }
-func (d itemDelegate) Height() int                             { return 1 }
-func (d itemDelegate) Spacing() int                            { return 0 }
-func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
-	if !ok {
-		return
+func initialModel() Model {
+	mySpinner := spinner.New()
+	mySpinner.Spinner = spinner.Dot
+	mySpinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
+	return Model{
+		State:   pageAuthentication,
+		Spinner: mySpinner,
 	}
+}
 
-	str := fmt.Sprintf("%d. Streamer: %s | Game: %s | Description: %s", index+1, i.title, i.gameName, i.desc)
+func (m Model) Init() tea.Cmd {
+	return tea.Batch(m.Spinner.Tick, authCommand())
+}
 
-	fn := d.styles.item.Render
-	if index == m.Index() {
-		fn = func(s ...string) string {
-			return d.styles.selectedItem.Render("> " + strings.Join(s, " "))
+func authCommand() tea.Cmd {
+	return func() tea.Msg {
+		if err := checkTokenFile(tokenFilePath); err != nil {
+			return AuthErrorMessage{Err: err}
 		}
-	}
 
-	fmt.Fprint(w, fn(str))
-}
+		tokenFile, err := tokenLoad(tokenFilePath)
+		if err != nil {
+			return AuthErrorMessage{Err: err}
+		}
 
-type model struct {
-	list            list.Model
-	selectedChannel string
-	gameName        string
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		case "enter":
-			i, ok := m.list.SelectedItem().(item)
-			if ok {
-				m.selectedChannel = i.title
-				m.gameName = i.gameName
+		if !validateToken(tokenFile.AccessToken) {
+			userToken := getUserToken(clientID)
+			if userToken.AccessToken == "" {
+				return AuthErrorMessage{Err: errors.New("authentication failed")}
 			}
-			return m, tea.Quit
-		}
-	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
-	}
 
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
+			authUser := getAuthenticatedUser(clientID, userToken)
+			if authUser.ID == "" {
+				return AuthErrorMessage{Err: errors.New("could not fetch user data")}
+			}
+
+			if err := saveToken(tokenFilePath, userToken.AccessToken, authUser.ID); err != nil {
+				return AuthErrorMessage{Err: err}
+			}
+		}
+
+		tokenFile, err = tokenLoad(tokenFilePath)
+		if err != nil {
+			return AuthErrorMessage{Err: err}
+		}
+
+		followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+		if len(followDataList.Data) == 0 {
+			return AuthErrorMessage{Err: errors.New("no followed channels found")}
+		}
+
+		channels := make([]ChannelInfo, 0, len(followDataList.Data))
+		ids := make(map[string]string)
+		for _, channel := range followDataList.Data {
+			if channel.Type != "live" {
+				continue
+			}
+			channels = append(channels, ChannelInfo{
+				BroadcasterName: channel.UserName,
+				GameName:        channel.GameName,
+				ViewCount:       channel.ViewerCount,
+			})
+			ids[channel.UserName] = channel.UserID
+		}
+
+		if len(channels) == 0 {
+			return AuthErrorMessage{Err: errors.New("no live channels found")}
+		}
+
+		return AuthSuccessMessage{
+			ChannelList:    channels,
+			BroadcasterIDs: ids,
+			TokenFile:      tokenFile,
+		}
+	}
 }
 
-func (m model) View() tea.View {
-	v := tea.NewView(docStyle.Render(m.list.View()))
-	v.AltScreen = true
-	return v
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.Spinner, cmd = m.Spinner.Update(msg)
+		return m, cmd
+	case AuthSuccessMessage:
+		m.State = pageStreams
+		m.ChannelList = msg.ChannelList
+		m.BroadcasterIDs = msg.BroadcasterIDs
+		m.TokenFile = msg.TokenFile
+		m.SelectedIndex = 0
+		return m, nil
+	case AuthErrorMessage:
+		m.State = pageQuitting
+		m.Err = msg.Err
+		return m, tea.Quit
+	case tea.KeyPressMsg:
+		if m.State != pageStreams {
+			return m, nil
+		}
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			m.State = pageQuitting
+			return m, tea.Quit
+		case "k", "up":
+			if m.SelectedIndex > 0 {
+				m.SelectedIndex--
+			}
+			return m, nil
+		case "j", "down":
+			if m.SelectedIndex < len(m.ChannelList)-1 {
+				m.SelectedIndex++
+			}
+			return m, nil
+		case "enter":
+			m.SelectedChannel = m.ChannelList[m.SelectedIndex].BroadcasterName
+			return m, tea.Quit
+		}
+	}
+	return m, nil
+}
+
+func (m Model) View() tea.View {
+	var str string
+
+	switch m.State {
+	case pageAuthentication:
+		str := fmt.Sprintf("%s Authenticating...\n", m.Spinner.View())
+		return tea.NewView(str)
+	case pageStreams:
+		str := m.renderStreamsPage()
+		return tea.NewView(str)
+	case pageQuitting:
+		if m.Err != nil {
+			str = fmt.Sprintf("Error: %v\n", m.Err)
+			return tea.NewView(str)
+		}
+		str = "Goodbye.\n"
+		return tea.NewView(str)
+	default:
+		str = "\n"
+		return tea.NewView(str)
+	}
+}
+
+func (m Model) renderStreamsPage() string {
+	if len(m.ChannelList) == 0 {
+		return "No channels are live that you follow SADGE :(\n"
+	}
+
+	body := "Live channels\n\n"
+	for i, channel := range m.ChannelList {
+		cursor := " "
+		if i == m.SelectedIndex {
+			cursor = ">"
+		}
+		body += fmt.Sprintf("%s %s - %s (%d viewers)\n", cursor, channel.BroadcasterName, channel.GameName, channel.ViewCount)
+	}
+	body += "\nUse arrow keys and Enter to select"
+	return body
 }

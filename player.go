@@ -12,9 +12,12 @@ import (
 // TODO: MAKE STREAM WINDOW START ON THE LEFT SIDE OF THE MONITOR
 // GPT SAID THIS: mpv --gpu-context=x11egl --geometry=50%x100%+0+0 <video>
 // SEEMED TO WORK
+
+// TODO: For memes start a soap carving video or subway surfers when stream is
+// on ad break
 func startMPVWithStream(channel tea.Model) error {
-	selectedChannel := channel.(model).selectedChannel
-	selectedChannelGame := channel.(model).gameName
+	selectedChannel := channel.(Model).SelectedChannel
+	selectedChannelGame := channel.(Model).ChannelList[0].GameName
 
 	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
 	fmt.Printf("Starting mpv instance watching channel %s who is streaming %s", selectedChannel, selectedChannelGame)
