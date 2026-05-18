@@ -193,7 +193,7 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 	}
 }
 
-func spawnChatWindow(clientID, broadcasterID, userID, accessToken string) {
+func spawnChatWindow(broadcasterID, userID, accessToken string) {
 	fmt.Println("In chat func")
 
 	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat "+clientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
