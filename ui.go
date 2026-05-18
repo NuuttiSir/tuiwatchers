@@ -73,7 +73,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.BroadcasterIDs = msg.BroadcasterIDs
 		m.TokenFile = msg.TokenFile
 		m.SelectedIndex = 0
-		return m, nil
+		return m, tea.ClearScreen
 	case AuthErrorMessage:
 		m.State = pageQuitting
 		m.Err = msg.Err
