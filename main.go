@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"time"
@@ -87,15 +88,37 @@ type TokenFile struct {
 // 	fmt.Println("Count of live streams: ", count)
 // }
 
+func readInput(out chan<- string) {
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		out <- scanner.Text()
+		if scanner.Err() != nil {
+			fmt.Print(scanner.Err().Error())
+		}
+	}
+}
+
+func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
+	for message := range out {
+		sendChatMessage(broadcasterID, userID, accessToken, message)
+	}
+}
+
 func openChat() {
 	fmt.Println("CHAT")
 	fmt.Println("Starting chat window")
+
+	out := make(chan string)
+
+	go readInput(out)
+
+	go sendLoop(out, os.Args[3], os.Args[4], os.Args[5])
 
 	// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
 	done := make(chan struct{})
 	go func() {
 		//ClientID, BroadcasterID, UserID, AccessToken
-		connectAndListen(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+		connectAndListen(os.Args[3], os.Args[4], os.Args[5])
 		close(done)
 	}()
 

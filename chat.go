@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os/exec"
 	"time"
@@ -84,6 +85,72 @@ type ChatEvent struct {
 	Color                string      `json:"color"`
 }
 
+type SendChatMessage struct {
+	BroadcasterID string `json:"broadcaster_id"`
+	SenderID      string `json:"sender_id"`
+	Message       string `json:"message"`
+}
+
+type ReceivedChatMessageAnswer struct {
+	messageID  string
+	IsSent     bool
+	DropReason DropReason
+}
+
+type DropReason struct {
+	Code    string
+	Message string
+}
+
+func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
+	data := SendChatMessage{
+		BroadcasterID: broadcasterID,
+		SenderID:      userID,
+		Message:       message,
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/chat/messages", bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Client-Id", clientID)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	defer resp.Body.Close()
+
+	var chatMessageAnswer ReceivedChatMessageAnswer
+	dat, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	err = json.Unmarshal(dat, &chatMessageAnswer)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	return ReceivedChatMessageAnswer{
+		messageID: chatMessageAnswer.messageID,
+		IsSent:    chatMessageAnswer.IsSent,
+	}
+
+}
+
 func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
 	data := SubscriptionRequest{
 		Type:    "channel.chat.message",
@@ -123,7 +190,7 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 	defer resp.Body.Close()
 }
 
-func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
+func connectAndListen(broadcasterID, userID, accessToken string) {
 	// Open WebSocket connection
 	ctx := context.Background()
 
@@ -165,7 +232,7 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 			}
 			sessionID := serverMessage.MessagePayload.Session.ID
 
-			// SUBSCRIBE immidiately with the SESSION ID
+			// SUBSCRIBE immediately with the SESSION ID
 			postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken)
 
 		case "session_keepalive":
