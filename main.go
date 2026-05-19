@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -89,21 +88,21 @@ type TokenFile struct {
 // 	fmt.Println("Count of live streams: ", count)
 // }
 
-func readInput(out chan<- string) {
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		out <- scanner.Text()
-		if scanner.Err() != nil {
-			fmt.Print(scanner.Err().Error())
-		}
-	}
-}
-
-func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
-	for message := range out {
-		sendChatMessage(broadcasterID, userID, accessToken, message)
-	}
-}
+// func readInput(out chan<- string) {
+// 	scanner := bufio.NewScanner(os.Stdin)
+// 	if scanner.Scan() {
+// 		out <- scanner.Text()
+// 		if scanner.Err() != nil {
+// 			fmt.Print(scanner.Err().Error())
+// 		}
+// 	}
+// }
+//
+// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
+// 	for message := range out {
+// 		sendChatMessage(broadcasterID, userID, accessToken, message)
+// 	}
+// }
 
 func openChat() {
 	broadcasterID := os.Args[3]
