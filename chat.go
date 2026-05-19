@@ -1,6 +1,3 @@
-// TODO: ADD A WAY TO SEND MESSAGES
-// TODO: MAKE IT CLEANER WITH BUBBLETEA
-// TODO: MAKE A INPUT FIELD AND MAKE IT KIND OF FULLSCREEN
 // TODO: MAKE THE NEW CHAT TERMINAL OPEN ON THE RIGHT SIDE OF THE MONITOR
 // <CHECK player.go file for instructions>
 package main
@@ -9,11 +6,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os/exec"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/coder/websocket"
 )
 
@@ -84,6 +84,86 @@ type ChatEvent struct {
 	Color                string      `json:"color"`
 }
 
+type SendChatMessage struct {
+	BroadcasterID string `json:"broadcaster_id"`
+	SenderID      string `json:"sender_id"`
+	Message       string `json:"message"`
+}
+
+type ReceivedChatMessageAnswer struct {
+	MessageID  string     `json:"message_id"`
+	IsSent     bool       `json:"is_sent"`
+	DropReason DropReason `json:"drop_reason"`
+}
+
+type DropReason struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
+	data := SendChatMessage{
+		BroadcasterID: broadcasterID,
+		SenderID:      userID,
+		Message:       message,
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/chat/messages", bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Client-Id", clientID)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	defer resp.Body.Close()
+
+	var chatMessageAnswer ReceivedChatMessageAnswer
+	dat, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	err = json.Unmarshal(dat, &chatMessageAnswer)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	return ReceivedChatMessageAnswer{
+		MessageID: chatMessageAnswer.MessageID,
+		IsSent:    chatMessageAnswer.IsSent,
+	}
+
+}
+
+func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
+	return func() tea.Msg {
+		resp := sendChatMessage(broadcasterID, userID, accessToken, message)
+		if !resp.IsSent {
+			return SendResultMessage{
+				Ok:  false,
+				Err: errors.New(resp.DropReason.Message),
+			}
+		}
+		return SendResultMessage{Ok: true}
+
+	}
+}
+
 func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
 	data := SubscriptionRequest{
 		Type:    "channel.chat.message",
@@ -123,10 +203,8 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 	defer resp.Body.Close()
 }
 
-func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
+func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {
 	// Open WebSocket connection
-	ctx := context.Background()
-
 	conn, _, err := websocket.Dial(ctx, "wss://eventsub.wss.twitch.tv/ws", nil)
 	if err != nil {
 		fmt.Println(err)
@@ -165,7 +243,7 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 			}
 			sessionID := serverMessage.MessagePayload.Session.ID
 
-			// SUBSCRIBE immidiately with the SESSION ID
+			// SUBSCRIBE immediately with the SESSION ID
 			postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken)
 
 		case "session_keepalive":
@@ -184,7 +262,10 @@ func connectAndListen(clientID, broadcasterID, userID, accessToken string) {
 			chatMessage := event.Message.Text
 			username := event.ChatterUserName
 
-			fmt.Printf("%s: %s\n", username, chatMessage)
+			out <- IncomingChatMessage{
+				User: username,
+				Text: chatMessage,
+			}
 
 		case "sessions_reconnect":
 			// Twitch wants us to reconnect, log it for now for funsies
