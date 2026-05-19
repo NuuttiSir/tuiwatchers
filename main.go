@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -105,25 +106,51 @@ func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
 }
 
 func openChat() {
+	broadcasterID := os.Args[3]
+	userID := os.Args[4]
+	accessToken := os.Args[5]
+
 	fmt.Println("CHAT")
 	fmt.Println("Starting chat window")
 
-	out := make(chan string)
+	chatModel := InitialChatModel(broadcasterID, userID, accessToken)
+	program := tea.NewProgram(chatModel)
 
-	go readInput(out)
+	// channel for incoming messages
+	incoming := make(chan IncomingChatMessage, 50)
 
-	go sendLoop(out, os.Args[3], os.Args[4], os.Args[5])
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
-	done := make(chan struct{})
+	// out := make(chan string)
+	// go readInput(out)
+	// go sendLoop(out, os.Args[3], os.Args[4], os.Args[5])
+
+	// // Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+	// done := make(chan struct{})
+	// go func() {
+	// 	//ClientID, BroadcasterID, UserID, AccessToken
+	// 	connectAndListen(os.Args[3], os.Args[4], os.Args[5])
+	// 	close(done)
+	// }()
+	//
+	// // Wait for the websocket goroutine to finish before exiting
+	// <-done
+
+	//websocket listener
+	go connectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
+
 	go func() {
-		//ClientID, BroadcasterID, UserID, AccessToken
-		connectAndListen(os.Args[3], os.Args[4], os.Args[5])
-		close(done)
+		for msg := range incoming{
+			program.Send(msg)
+		}
 	}()
 
-	// Wait for the websocket goroutine to finish before exiting
-	<-done
+	_, err := program.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+	cancel()
 }
 
 func main() {

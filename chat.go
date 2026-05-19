@@ -1,6 +1,3 @@
-// TODO: ADD A WAY TO SEND MESSAGES
-// TODO: MAKE IT CLEANER WITH BUBBLETEA
-// TODO: MAKE A INPUT FIELD AND MAKE IT KIND OF FULLSCREEN
 // TODO: MAKE THE NEW CHAT TERMINAL OPEN ON THE RIGHT SIDE OF THE MONITOR
 // <CHECK player.go file for instructions>
 package main
@@ -9,12 +6,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os/exec"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/coder/websocket"
 )
 
@@ -92,14 +91,14 @@ type SendChatMessage struct {
 }
 
 type ReceivedChatMessageAnswer struct {
-	messageID  string
-	IsSent     bool
-	DropReason DropReason
+	MessageID  string     `json:"message_id"`
+	IsSent     bool       `json:"is_sent"`
+	DropReason DropReason `json:"drop_reason"`
 }
 
 type DropReason struct {
-	Code    string
-	Message string
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
@@ -145,10 +144,24 @@ func sendChatMessage(broadcasterID, userID, accessToken, message string) Receive
 	}
 
 	return ReceivedChatMessageAnswer{
-		messageID: chatMessageAnswer.messageID,
+		MessageID: chatMessageAnswer.MessageID,
 		IsSent:    chatMessageAnswer.IsSent,
 	}
 
+}
+
+func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
+	return func() tea.Msg {
+		resp := sendChatMessage(broadcasterID, userID, accessToken, message)
+		if !resp.IsSent {
+			return SendResultMessage{
+				Ok:  false,
+				Err: errors.New(resp.DropReason.Message),
+			}
+		}
+		return SendResultMessage{Ok: true}
+
+	}
 }
 
 func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
@@ -190,10 +203,8 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 	defer resp.Body.Close()
 }
 
-func connectAndListen(broadcasterID, userID, accessToken string) {
+func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {
 	// Open WebSocket connection
-	ctx := context.Background()
-
 	conn, _, err := websocket.Dial(ctx, "wss://eventsub.wss.twitch.tv/ws", nil)
 	if err != nil {
 		fmt.Println(err)
@@ -251,7 +262,10 @@ func connectAndListen(broadcasterID, userID, accessToken string) {
 			chatMessage := event.Message.Text
 			username := event.ChatterUserName
 
-			fmt.Printf("%s: %s\n", username, chatMessage)
+			out <- IncomingChatMessage{
+				User: username,
+				Text: chatMessage,
+			}
 
 		case "sessions_reconnect":
 			// Twitch wants us to reconnect, log it for now for funsies
