@@ -1,0 +1,1476 @@
+{
+  "repository": "Local Folder",
+  "analyzedAt": "2026-05-20T07:51:45.993Z",
+  "codeflowVersion": "1.0",
+  "summary": {
+    "healthScore": 100,
+    "healthGrade": "A",
+    "totalFiles": 8,
+    "totalFunctions": 34,
+    "totalConnections": 16,
+    "linesOfCode": 1137,
+    "unusedFunctions": 0,
+    "securityIssues": 3,
+    "patterns": 0,
+    "duplicates": 1,
+    "layerViolations": 0,
+    "highSecurityIssues": 0
+  },
+  "files": [
+    {
+      "path": "api.go",
+      "name": "api.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 120,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "getUserData",
+          "line": 13,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "// func getUserData(username, clientID string, appToken AccessToken) UserData {\n// \treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"users\", nil)\n// \tif err != nil {\n// \t\tfmt.Println(\"error:\", err)\n// \t\treturn UserData{}\n// \t}\n//\n// \tif username != \"\" {\n// \t\tq := req.URL.Query()\n// \t\tq.Add(\"login\", username)\n// \t\treq.URL.RawQuery = q.Encode()\n// \t}\n//\n// \treq.Header.Set(\"Authorization\", \"Bearer \"+appToken.AccessToken)\n// \treq.Header.Set(\"Client-Id\", clientID)\n  // ..."
+        },
+        {
+          "name": "getFollowedChannels",
+          "line": 49,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "auth.go",
+              "name": "auth.go",
+              "count": 1
+            }
+          ],
+          "code": "func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowDataList {\n\treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"streams/followed\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn FollowDataList{}\n\t}\n\n\tq := req.URL.Query()\n\tq.Add(\"user_id\", userID)\n\treq.URL.RawQuery = q.Encode()\n\n\treq.Header.Set(\"Authorization\", \"Bearer \"+userToken.AccessToken)\n\treq.Header.Set(\"Client-Id\", clientID)\n\n\tclient := &http.Client{}\n  // ..."
+        },
+        {
+          "name": "getAuthenticatedUser",
+          "line": 85,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "auth.go",
+              "name": "auth.go",
+              "count": 1
+            }
+          ],
+          "code": "func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {\n\treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"users\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn UserData{}\n\t}\n\n\treq.Header.Set(\"Authorization\", \"Bearer \"+userToken.AccessToken)\n\treq.Header.Set(\"Client-Id\", clientID)\n\n\tclient := &http.Client{}\n\tresp, err := client.Do(req)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn UserData{}\n  // ..."
+        }
+      ],
+      "functionCount": 3
+    },
+    {
+      "path": "auth.go",
+      "name": "auth.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 153,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "getUserToken",
+          "line": 21,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func getUserToken(clientID string) AccessToken {\n\tresp, err := http.PostForm(TwitchOauthURL+\"device\", url.Values{\n\t\t\"client_id\": {clientID},\n\t\t\"scopes\":    {\"user:read:follows user:write:chat user:read:chat\"},\n\t})\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn AccessToken{}\n\t}\n\tdefer resp.Body.Close()\n\n\tvar deviceCode DeviceCodeResponse\n\tif err := json.NewDecoder(resp.Body).Decode(&deviceCode); err != nil {\n\t\tfmt.Println(\"error decoding:\", err)\n\t\treturn AccessToken{}\n  // ..."
+        },
+        {
+          "name": "validateToken",
+          "line": 67,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func validateToken(accessTokenParam string) bool {\n\treq, err := http.NewRequest(\"GET\", TwitchOauthURL+\"validate\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"err: \", err)\n\t\treturn false\n\t}\n\treq.Header.Set(\"Authorization\", \"OAuth \"+accessTokenParam)\n\n\tclient := &http.Client{}\n\tresp, err := client.Do(req)\n\tif err != nil {\n\t\tfmt.Println(\"err: \", err)\n\t\treturn false\n\t}\n\tdefer resp.Body.Close()\n  // ..."
+        },
+        {
+          "name": "authCommand",
+          "line": 91,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 1
+            }
+          ],
+          "code": "func authCommand() tea.Cmd {\n\treturn func() tea.Msg {\n\t\tif err := checkTokenFile(tokenFilePath); err != nil {\n\t\t\treturn AuthErrorMessage{Err: err}\n\t\t}\n\n\t\ttokenFile, err := tokenLoad(tokenFilePath)\n\t\tif err != nil {\n\t\t\treturn AuthErrorMessage{Err: err}\n\t\t}\n\n\t\tif !validateToken(tokenFile.AccessToken) {\n\t\t\tuserToken := getUserToken(clientID)\n\t\t\tif userToken.AccessToken == \"\" {\n\t\t\t\treturn AuthErrorMessage{Err: errors.New(\"authentication failed\")}\n  // ..."
+        }
+      ],
+      "functionCount": 3
+    },
+    {
+      "path": "chat.go",
+      "name": "chat.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 287,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "sendChatMessage",
+          "line": 104,
+          "internalCalls": 2,
+          "externalCalls": 1,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 1
+            }
+          ],
+          "code": "func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {\n\tdata := SendChatMessage{\n\t\tBroadcasterID: broadcasterID,\n\t\tSenderID:      userID,\n\t\tMessage:       message,\n\t}\n\tbody, err := json.Marshal(data)\n\tif err != nil {\n\t\tfmt.Println(err)\n\t\treturn ReceivedChatMessageAnswer{}\n\t}\n\n\treq, err := http.NewRequest(\"POST\", \"https://api.twitch.tv/helix/chat/messages\", bytes.NewBuffer(body))\n\tif err != nil {\n\t\tfmt.Println(err)\n  // ..."
+        },
+        {
+          "name": "sendChatCommand",
+          "line": 153,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "chatUi.go",
+              "name": "chatUi.go",
+              "count": 1
+            }
+          ],
+          "code": "func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {\n\treturn func() tea.Msg {\n\t\tresp := sendChatMessage(broadcasterID, userID, accessToken, message)\n\t\tif !resp.IsSent {\n\t\t\treturn SendResultMessage{\n\t\t\t\tOk:  false,\n\t\t\t\tErr: errors.New(resp.DropReason.Message),\n\t\t\t}\n\t\t}\n\t\treturn SendResultMessage{Ok: true}\n\n\t}\n}\n\nfunc postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {\n  // ..."
+        },
+        {
+          "name": "postSubscribe",
+          "line": 167,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {\n\tdata := SubscriptionRequest{\n\t\tType:    \"channel.chat.message\",\n\t\tVersion: \"1\",\n\t\tCondition: Condition{\n\t\t\tBroadcasterUserID: broadcasterID,\n\t\t\tUserID:            userID,\n\t\t},\n\t\tTransport: Transport{\n\t\t\tMethod:    \"websocket\",\n\t\t\tSessionID: sessionID,\n\t\t},\n\t}\n\n\tbody, err := json.Marshal(data)\n  // ..."
+        },
+        {
+          "name": "connectAndListen",
+          "line": 206,
+          "internalCalls": 1,
+          "externalCalls": 2,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 2
+            }
+          ],
+          "code": "func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {\n\t// Open WebSocket connection\n\tconn, _, err := websocket.Dial(ctx, \"wss://eventsub.wss.twitch.tv/ws\", nil)\n\tif err != nil {\n\t\tfmt.Println(err)\n\t\treturn\n\t}\n\tdefer conn.CloseNow()\n\n\t// Start infinite read loop\n\t// We keep listening forever because Twitch will keep sending us messages\n\tfor {\n\t\t// Read next message from Twitch\n\t\t// This BLOCKS meaning it waits until next message comes\n\t\t_, msg, err := conn.Read(ctx)\n  // ..."
+        },
+        {
+          "name": "spawnChatWindow",
+          "line": 277,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 1
+            }
+          ],
+          "code": "func spawnChatWindow(broadcasterID, userID, accessToken string) {\n\tfmt.Println(\"In chat func\")\n\n\tcmd := exec.Command(\"/usr/bin/ghostty\", \"-e\", \"bash\", \"-c\", \"./tuiwatchers --chat \"+clientID+\" \"+broadcasterID+\" \"+userID+\" \"+accessToken+\";exec bash\")\n\terr := cmd.Start()\n\tif err != nil {\n\t\tfmt.Println(\"Terminal window opening error\", err)\n\t\treturn\n\t}\n}\n"
+        }
+      ],
+      "functionCount": 5
+    },
+    {
+      "path": "chatUi.go",
+      "name": "chatUi.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 128,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "InitialChatModel",
+          "line": 37,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 1
+            }
+          ],
+          "code": "func InitialChatModel(broadcasterID, userID, accessToken string) ChatModel {\n\tti := textinput.New()\n\tti.Placeholder = \"Enter Chat Message Here\"\n\tti.SetVirtualCursor(false)\n\tti.Focus()\n\t// Twitch does not allow sending messages > 500 chars\n\tti.CharLimit = 500\n\tti.SetWidth(1)\n\n\tviewport := viewport.New()\n\n\treturn ChatModel{\n\t\tTextInput:     ti,\n\t\tViewport:      viewport,\n\t\tMessages:      []string{},\n  // ..."
+        },
+        {
+          "name": "Init",
+          "line": 58,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 1
+            }
+          ],
+          "code": "func (cm ChatModel) Init() tea.Cmd {\n\treturn tea.Batch(textinput.Blink)\n}\n\nfunc (cm ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase tea.WindowSizeMsg:\n\t\tcm.Width = msg.Width\n\t\tcm.Height = msg.Height\n\n\t\theaderHeight := lipgloss.Height(cm.headerView())\n\t\tfooterHeight := lipgloss.Height(cm.footerView())\n\t\tinputHeight := lipgloss.Height(cm.TextInput.View())\n\n\t\tcm.TextInput.SetWidth(msg.Width - 2)\n  // ..."
+        },
+        {
+          "name": "Update",
+          "line": 62,
+          "internalCalls": 2,
+          "externalCalls": 3,
+          "totalCalls": 5,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 3
+            }
+          ],
+          "code": "func (cm ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase tea.WindowSizeMsg:\n\t\tcm.Width = msg.Width\n\t\tcm.Height = msg.Height\n\n\t\theaderHeight := lipgloss.Height(cm.headerView())\n\t\tfooterHeight := lipgloss.Height(cm.footerView())\n\t\tinputHeight := lipgloss.Height(cm.TextInput.View())\n\n\t\tcm.TextInput.SetWidth(msg.Width - 2)\n\t\tcm.Viewport.SetWidth(msg.Width)\n\t\tcm.Viewport.SetHeight(msg.Height - headerHeight - inputHeight - footerHeight)\n\n\t\treturn cm, nil\n  // ..."
+        },
+        {
+          "name": "View",
+          "line": 108,
+          "internalCalls": 4,
+          "externalCalls": 3,
+          "totalCalls": 7,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 3
+            }
+          ],
+          "code": "func (cm ChatModel) View() tea.View {\n\t// layout header viewport input footer\n\tcontent := lipgloss.JoinVertical(\n\t\tlipgloss.Top,\n\t\tcm.headerView(),\n\t\tcm.Viewport.View(),\n\t\tcm.TextInput.View(),\n\t\tcm.footerView(),\n\t)\n\tview := tea.NewView(content)\n\treturn view\n}\n\nfunc (cm ChatModel) headerView() string { return \"Chat\\n\" }\nfunc (cm ChatModel) footerView() string {\n  // ..."
+        },
+        {
+          "name": "headerView",
+          "line": 121,
+          "internalCalls": 3,
+          "externalCalls": 0,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func (cm ChatModel) headerView() string { return \"Chat\\n\" }\nfunc (cm ChatModel) footerView() string {\n\tif cm.Status != \"\" {\n\t\treturn \"\\n\" + cm.Status\n\t}\n\treturn \"\\nESC TO QUIT\"\n}\n"
+        },
+        {
+          "name": "footerView",
+          "line": 122,
+          "internalCalls": 3,
+          "externalCalls": 0,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func (cm ChatModel) footerView() string {\n\tif cm.Status != \"\" {\n\t\treturn \"\\n\" + cm.Status\n\t}\n\treturn \"\\nESC TO QUIT\"\n}\n"
+        }
+      ],
+      "functionCount": 6
+    },
+    {
+      "path": "player.go",
+      "name": "player.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 40,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "startMPVWithStream",
+          "line": 18,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 1
+            }
+          ],
+          "code": "func startMPVWithStream(channel tea.Model) error {\n\tvar selectedChannelGame string\n\tselectedChannel := channel.(Model).SelectedChannel\n\tif item, ok := channel.(Model).ChannelList.SelectedItem().(ChannelInfo); ok {\n\t\tselectedChannelGame = item.GameName\n\t}\n\n\tmpvInstance := exec.Command(\"/usr/bin/mpv\", \"https://twitch.tv/\"+selectedChannel)\n\tfmt.Printf(\"Starting mpv instance watching channel %s who is streaming %s\", selectedChannel, selectedChannelGame)\n\n\toutput, err := mpvInstance.CombinedOutput()\n\tif err != nil {\n\t\tif strings.Contains(string(output), \"ytdl\") {\n\t\t\tfmt.Println(\"\\nSeems like you dont have yt-dlp downloaded\")\n\t\t\tfmt.Println(\"Do you want me to download it and try again\")\n  // ..."
+        }
+      ],
+      "functionCount": 1
+    },
+    {
+      "path": "storage.go",
+      "name": "storage.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 43,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "saveToken",
+          "line": 10,
+          "internalCalls": 2,
+          "externalCalls": 1,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "auth.go",
+              "name": "auth.go",
+              "count": 1
+            }
+          ],
+          "code": "func saveToken(path, token, userID string) error {\n\tfile := TokenFile{\n\t\tAccessToken: token,\n\t\tUserID:      userID,\n\t}\n\tbytesWrite, err := json.MarshalIndent(file, \"\", \" \")\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn os.WriteFile(path, bytesWrite, 0666)\n}\n\nfunc tokenLoad(path string) (TokenFile, error) {\n\tbytesRead, err := os.ReadFile(path)\n\tif err != nil {\n  // ..."
+        },
+        {
+          "name": "tokenLoad",
+          "line": 22,
+          "internalCalls": 1,
+          "externalCalls": 2,
+          "totalCalls": 3,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "auth.go",
+              "name": "auth.go",
+              "count": 2
+            }
+          ],
+          "code": "func tokenLoad(path string) (TokenFile, error) {\n\tbytesRead, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn TokenFile{}, err\n\t}\n\tvar tokenFile TokenFile\n\tif err := json.Unmarshal(bytesRead, &tokenFile); err != nil {\n\t\treturn TokenFile{}, err\n\t}\n\treturn tokenFile, nil\n}\n\nfunc checkTokenFile(tokenFilePath string) error {\n\tif _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {\n\t\tfmt.Println(\"tokens.json not found... Creating\")\n  // ..."
+        },
+        {
+          "name": "checkTokenFile",
+          "line": 34,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "auth.go",
+              "name": "auth.go",
+              "count": 1
+            }
+          ],
+          "code": "func checkTokenFile(tokenFilePath string) error {\n\tif _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {\n\t\tfmt.Println(\"tokens.json not found... Creating\")\n\t\tif err := saveToken(tokenFilePath, \"\", \"\"); err != nil {\n\t\t\tfmt.Println(\"err creating token file:\", err)\n\t\t}\n\t}\n\treturn nil\n}\n"
+        }
+      ],
+      "functionCount": 3
+    },
+    {
+      "path": "ui.go",
+      "name": "ui.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 174,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "FilterValue",
+          "line": 52,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func (chInfo ChannelInfo) FilterValue() string { return chInfo.BroadcasterName + \" \" + chInfo.GameName }\nfunc (chInfo ChannelInfo) Title() string       { return chInfo.BroadcasterName }\nfunc (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n  // ..."
+        },
+        {
+          "name": "Title",
+          "line": 53,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func (chInfo ChannelInfo) Title() string       { return chInfo.BroadcasterName }\nfunc (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n  // ..."
+        },
+        {
+          "name": "Description",
+          "line": 54,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n\tchannelList.Title = \"Live channels\"\n  // ..."
+        },
+        {
+          "name": "newChannelList",
+          "line": 58,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n\tchannelList.Title = \"Live channels\"\n\tchannelList.SetFilteringEnabled(false)\n\tchannelList.SetShowStatusBar(false)\n\tchannelList.SetShowHelp(false)\n\tchannelList.DisableQuitKeybindings()\n  // ..."
+        },
+        {
+          "name": "initialModel",
+          "line": 76,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "main.go",
+              "name": "main.go",
+              "count": 1
+            }
+          ],
+          "code": "func initialModel() Model {\n\tmySpinner := spinner.New()\n\tmySpinner.Spinner = spinner.Dot\n\tmySpinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(\"205\"))\n\n\treturn Model{\n\t\tState:   pageAuthentication,\n\t\tSpinner: mySpinner,\n\t}\n}\n\nfunc (m Model) Init() tea.Cmd {\n\treturn tea.Batch(m.Spinner.Tick, authCommand())\n}\n\n  // ..."
+        },
+        {
+          "name": "Init",
+          "line": 87,
+          "internalCalls": 1,
+          "externalCalls": 1,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 1
+            }
+          ],
+          "code": "func (m Model) Init() tea.Cmd {\n\treturn tea.Batch(m.Spinner.Tick, authCommand())\n}\n\nfunc (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase spinner.TickMsg:\n\t\tvar cmd tea.Cmd\n\t\tm.Spinner, cmd = m.Spinner.Update(msg)\n\t\treturn m, cmd\n\tcase AuthSuccessMessage:\n\t\tm.State = pageStreams\n\t\tm.ChannelList = newChannelList(msg.ChannelList)\n\t\tm.BroadcasterIDs = msg.BroadcasterIDs\n\t\tm.TokenFile = msg.TokenFile\n  // ..."
+        },
+        {
+          "name": "Update",
+          "line": 91,
+          "internalCalls": 2,
+          "externalCalls": 3,
+          "totalCalls": 5,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 3
+            }
+          ],
+          "code": "func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase spinner.TickMsg:\n\t\tvar cmd tea.Cmd\n\t\tm.Spinner, cmd = m.Spinner.Update(msg)\n\t\treturn m, cmd\n\tcase AuthSuccessMessage:\n\t\tm.State = pageStreams\n\t\tm.ChannelList = newChannelList(msg.ChannelList)\n\t\tm.BroadcasterIDs = msg.BroadcasterIDs\n\t\tm.TokenFile = msg.TokenFile\n\t\th, v := docStyle.GetFrameSize()\n\t\tm.ChannelList.SetSize(m.WindowWidth-h, m.WindowHeight-v)\n\t\treturn m, tea.ClearScreen\n\tcase AuthErrorMessage:\n  // ..."
+        },
+        {
+          "name": "View",
+          "line": 142,
+          "internalCalls": 4,
+          "externalCalls": 3,
+          "totalCalls": 7,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [
+            {
+              "file": "ui.go",
+              "name": "ui.go",
+              "count": 3
+            }
+          ],
+          "code": "func (m Model) View() tea.View {\n\tvar str string\n\n\tswitch m.State {\n\tcase pageAuthentication:\n\t\tstr := fmt.Sprintf(\"%s Authenticating...\", m.Spinner.View())\n\t\tv := tea.NewView(docStyle.Render(str))\n\t\tv.AltScreen = true\n\t\treturn v\n\tcase pageStreams:\n\t\tcontent := m.ChannelList.View() + \"\\nUse arrow keys and Enter to select\"\n\t\tv := tea.NewView(docStyle.Render(content))\n\t\tv.AltScreen = true\n\t\treturn v\n\tcase pageQuitting:\n  // ..."
+        }
+      ],
+      "functionCount": 8
+    },
+    {
+      "path": "main.go",
+      "name": "main.go",
+      "folder": "root",
+      "layer": "utils",
+      "lines": 192,
+      "churn": 0,
+      "isCode": true,
+      "functions": [
+        {
+          "name": "printFollowData",
+          "line": 79,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "// func printFollowData(followDataList FollowDataList) {\n// \tcount := 0\n// \tfmt.Println(\"Channels that are live\")\n// \tfor _, ch := range followDataList.Data {\n// \t\tif ch.Type == \"live\" {\n// \t\t\tcount += 1\n// \t\t\tfmt.Printf(\"  - %s IS LIVE\\n\", ch.UserName)\n// \t\t}\n// \t}\n// \tfmt.Println(\"Count of live streams: \", count)\n// }\n\n// func readInput(out chan<- string) {\n// \tscanner := bufio.NewScanner(os.Stdin)\n// \tif scanner.Scan() {\n  // ..."
+        },
+        {
+          "name": "readInput",
+          "line": 91,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "// func readInput(out chan<- string) {\n// \tscanner := bufio.NewScanner(os.Stdin)\n// \tif scanner.Scan() {\n// \t\tout <- scanner.Text()\n// \t\tif scanner.Err() != nil {\n// \t\t\tfmt.Print(scanner.Err().Error())\n// \t\t}\n// \t}\n// }\n//\n// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {\n// \tfor message := range out {\n// \t\tsendChatMessage(broadcasterID, userID, accessToken, message)\n// \t}\n// }\n  // ..."
+        },
+        {
+          "name": "sendLoop",
+          "line": 101,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {\n// \tfor message := range out {\n// \t\tsendChatMessage(broadcasterID, userID, accessToken, message)\n// \t}\n// }\n\nfunc openChat() {\n\tbroadcasterID := os.Args[3]\n\tuserID := os.Args[4]\n\taccessToken := os.Args[5]\n\n\tfmt.Println(\"CHAT\")\n\tfmt.Println(\"Starting chat window\")\n\n\tchatModel := InitialChatModel(broadcasterID, userID, accessToken)\n  // ..."
+        },
+        {
+          "name": "openChat",
+          "line": 107,
+          "internalCalls": 2,
+          "externalCalls": 0,
+          "totalCalls": 2,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func openChat() {\n\tbroadcasterID := os.Args[3]\n\tuserID := os.Args[4]\n\taccessToken := os.Args[5]\n\n\tfmt.Println(\"CHAT\")\n\tfmt.Println(\"Starting chat window\")\n\n\tchatModel := InitialChatModel(broadcasterID, userID, accessToken)\n\tprogram := tea.NewProgram(chatModel)\n\n\t// channel for incoming messages\n\tincoming := make(chan IncomingChatMessage, 50)\n\n\tctx, cancel := context.WithCancel(context.Background())\n  // ..."
+        },
+        {
+          "name": "main",
+          "line": 155,
+          "internalCalls": 1,
+          "externalCalls": 0,
+          "totalCalls": 1,
+          "isUnused": false,
+          "isExported": false,
+          "isClassMethod": false,
+          "isTopLevel": true,
+          "type": "function",
+          "callers": [],
+          "code": "func main() {\n\tif len(os.Args) >= 2 {\n\t\tswitch os.Args[1] {\n\t\tcase \"--chat\":\n\t\t\topenChat()\n\t\t\treturn\n\t\t}\n\t}\n\n\tmodel := initialModel()\n\tprogram := tea.NewProgram(model)\n\tselectedChannel, err := program.Run()\n\tif err != nil {\n\t\tfmt.Printf(\"Whoops an error has occurred: %v\", err)\n\t\tos.Exit(1)\n  // ..."
+        }
+      ],
+      "functionCount": 5
+    }
+  ],
+  "unusedFunctions": [],
+  "dependencies": [
+    {
+      "from": "api.go",
+      "to": "auth.go",
+      "function": "getFollowedChannels",
+      "callCount": 1
+    },
+    {
+      "from": "api.go",
+      "to": "auth.go",
+      "function": "getAuthenticatedUser",
+      "callCount": 1
+    },
+    {
+      "from": "storage.go",
+      "to": "auth.go",
+      "function": "saveToken",
+      "callCount": 1
+    },
+    {
+      "from": "storage.go",
+      "to": "auth.go",
+      "function": "tokenLoad",
+      "callCount": 2
+    },
+    {
+      "from": "storage.go",
+      "to": "auth.go",
+      "function": "checkTokenFile",
+      "callCount": 1
+    },
+    {
+      "from": "chat.go",
+      "to": "chatUi.go",
+      "function": "sendChatCommand",
+      "callCount": 1
+    },
+    {
+      "from": "auth.go",
+      "to": "ui.go",
+      "function": "authCommand",
+      "callCount": 1
+    },
+    {
+      "from": "chatUi.go",
+      "to": "ui.go",
+      "function": "Init",
+      "callCount": 1
+    },
+    {
+      "from": "chatUi.go",
+      "to": "ui.go",
+      "function": "Update",
+      "callCount": 3
+    },
+    {
+      "from": "chatUi.go",
+      "to": "ui.go",
+      "function": "View",
+      "callCount": 3
+    },
+    {
+      "from": "chat.go",
+      "to": "main.go",
+      "function": "sendChatMessage",
+      "callCount": 1
+    },
+    {
+      "from": "chat.go",
+      "to": "main.go",
+      "function": "connectAndListen",
+      "callCount": 2
+    },
+    {
+      "from": "chat.go",
+      "to": "main.go",
+      "function": "spawnChatWindow",
+      "callCount": 1
+    },
+    {
+      "from": "chatUi.go",
+      "to": "main.go",
+      "function": "InitialChatModel",
+      "callCount": 1
+    },
+    {
+      "from": "player.go",
+      "to": "main.go",
+      "function": "startMPVWithStream",
+      "callCount": 1
+    },
+    {
+      "from": "ui.go",
+      "to": "main.go",
+      "function": "initialModel",
+      "callCount": 1
+    }
+  ],
+  "architectureIssues": [
+    {
+      "type": "warning",
+      "title": "1 Similar Code Blocks",
+      "description": "Copy-paste code detected",
+      "affectedFiles": [
+        "getUserData, printFollowData, readInput"
+      ],
+      "affectedItems": [
+        {
+          "name": "getUserData, printFollowData, readInput",
+          "suggestion": "Similar code blocks (100% match) - consider extracting to a shared utility",
+          "files": [
+            {
+              "file": "api.go",
+              "name": "getUserData",
+              "line": 13
+            },
+            {
+              "file": "main.go",
+              "name": "printFollowData",
+              "line": 79
+            },
+            {
+              "file": "main.go",
+              "name": "readInput",
+              "line": 91
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "patterns": [],
+  "securityIssues": [
+    {
+      "severity": "low",
+      "title": "Code Comments",
+      "description": "1 TODO/FIXME comments found. Address before release.",
+      "file": "chat.go",
+      "path": "chat.go",
+      "code": ""
+    },
+    {
+      "severity": "low",
+      "title": "Code Comments",
+      "description": "3 TODO/FIXME comments found. Address before release.",
+      "file": "player.go",
+      "path": "player.go",
+      "code": ""
+    },
+    {
+      "severity": "low",
+      "title": "Code Comments",
+      "description": "2 TODO/FIXME comments found. Address before release.",
+      "file": "ui.go",
+      "path": "ui.go",
+      "code": ""
+    }
+  ],
+  "duplicates": [
+    {
+      "type": "code",
+      "name": "getUserData, printFollowData, readInput",
+      "count": 3,
+      "files": [
+        {
+          "file": "api.go",
+          "name": "getUserData",
+          "line": 13
+        },
+        {
+          "file": "main.go",
+          "name": "printFollowData",
+          "line": 79
+        },
+        {
+          "file": "main.go",
+          "name": "readInput",
+          "line": 91
+        }
+      ],
+      "similarity": 100,
+      "suggestion": "Similar code blocks (100% match) - consider extracting to a shared utility"
+    }
+  ],
+  "layerViolations": [],
+  "suggestions": [
+    {
+      "priority": "high",
+      "icon": "box",
+      "title": "Extract Duplicated Code",
+      "desc": "1 instances of similar code found. DRY principle violation.",
+      "action": "Create shared utility functions",
+      "impact": "Reduces maintenance burden and potential bugs"
+    }
+  ],
+  "languageBreakdown": [
+    {
+      "ext": "go",
+      "lines": 1137,
+      "pct": 100
+    }
+  ],
+  "folderStructure": [
+    "root"
+  ],
+  "functionStatistics": [
+    {
+      "name": "getUserData",
+      "file": "api.go",
+      "folder": "root",
+      "line": 13,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "// func getUserData(username, clientID string, appToken AccessToken) UserData {\n// \treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"users\", nil)\n// \tif err != nil {\n// \t\tfmt.Println(\"error:\", err)\n// \t\treturn UserData{}\n// \t}\n//\n// \tif username != \"\" {\n// \t\tq := req.URL.Query()\n// \t\tq.Add(\"login\", username)\n// \t\treq.URL.RawQuery = q.Encode()\n// \t}\n//\n// \treq.Header.Set(\"Authorization\", \"Bearer \"+appToken.AccessToken)\n// \treq.Header.Set(\"Client-Id\", clientID)\n  // ..."
+    },
+    {
+      "name": "getFollowedChannels",
+      "file": "api.go",
+      "folder": "root",
+      "line": 49,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "auth.go",
+          "name": "auth.go",
+          "count": 1
+        }
+      ],
+      "code": "func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowDataList {\n\treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"streams/followed\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn FollowDataList{}\n\t}\n\n\tq := req.URL.Query()\n\tq.Add(\"user_id\", userID)\n\treq.URL.RawQuery = q.Encode()\n\n\treq.Header.Set(\"Authorization\", \"Bearer \"+userToken.AccessToken)\n\treq.Header.Set(\"Client-Id\", clientID)\n\n\tclient := &http.Client{}\n  // ..."
+    },
+    {
+      "name": "getAuthenticatedUser",
+      "file": "api.go",
+      "folder": "root",
+      "line": 85,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "auth.go",
+          "name": "auth.go",
+          "count": 1
+        }
+      ],
+      "code": "func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {\n\treq, err := http.NewRequest(\"GET\", TwitchAPIURL+\"users\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn UserData{}\n\t}\n\n\treq.Header.Set(\"Authorization\", \"Bearer \"+userToken.AccessToken)\n\treq.Header.Set(\"Client-Id\", clientID)\n\n\tclient := &http.Client{}\n\tresp, err := client.Do(req)\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn UserData{}\n  // ..."
+    },
+    {
+      "name": "getUserToken",
+      "file": "auth.go",
+      "folder": "root",
+      "line": 21,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func getUserToken(clientID string) AccessToken {\n\tresp, err := http.PostForm(TwitchOauthURL+\"device\", url.Values{\n\t\t\"client_id\": {clientID},\n\t\t\"scopes\":    {\"user:read:follows user:write:chat user:read:chat\"},\n\t})\n\tif err != nil {\n\t\tfmt.Println(\"error:\", err)\n\t\treturn AccessToken{}\n\t}\n\tdefer resp.Body.Close()\n\n\tvar deviceCode DeviceCodeResponse\n\tif err := json.NewDecoder(resp.Body).Decode(&deviceCode); err != nil {\n\t\tfmt.Println(\"error decoding:\", err)\n\t\treturn AccessToken{}\n  // ..."
+    },
+    {
+      "name": "validateToken",
+      "file": "auth.go",
+      "folder": "root",
+      "line": 67,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func validateToken(accessTokenParam string) bool {\n\treq, err := http.NewRequest(\"GET\", TwitchOauthURL+\"validate\", nil)\n\tif err != nil {\n\t\tfmt.Println(\"err: \", err)\n\t\treturn false\n\t}\n\treq.Header.Set(\"Authorization\", \"OAuth \"+accessTokenParam)\n\n\tclient := &http.Client{}\n\tresp, err := client.Do(req)\n\tif err != nil {\n\t\tfmt.Println(\"err: \", err)\n\t\treturn false\n\t}\n\tdefer resp.Body.Close()\n  // ..."
+    },
+    {
+      "name": "authCommand",
+      "file": "auth.go",
+      "folder": "root",
+      "line": 91,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "ui.go",
+          "name": "ui.go",
+          "count": 1
+        }
+      ],
+      "code": "func authCommand() tea.Cmd {\n\treturn func() tea.Msg {\n\t\tif err := checkTokenFile(tokenFilePath); err != nil {\n\t\t\treturn AuthErrorMessage{Err: err}\n\t\t}\n\n\t\ttokenFile, err := tokenLoad(tokenFilePath)\n\t\tif err != nil {\n\t\t\treturn AuthErrorMessage{Err: err}\n\t\t}\n\n\t\tif !validateToken(tokenFile.AccessToken) {\n\t\t\tuserToken := getUserToken(clientID)\n\t\t\tif userToken.AccessToken == \"\" {\n\t\t\t\treturn AuthErrorMessage{Err: errors.New(\"authentication failed\")}\n  // ..."
+    },
+    {
+      "name": "sendChatMessage",
+      "file": "chat.go",
+      "folder": "root",
+      "line": 104,
+      "internalCalls": 2,
+      "externalCalls": 1,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 1
+        }
+      ],
+      "code": "func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {\n\tdata := SendChatMessage{\n\t\tBroadcasterID: broadcasterID,\n\t\tSenderID:      userID,\n\t\tMessage:       message,\n\t}\n\tbody, err := json.Marshal(data)\n\tif err != nil {\n\t\tfmt.Println(err)\n\t\treturn ReceivedChatMessageAnswer{}\n\t}\n\n\treq, err := http.NewRequest(\"POST\", \"https://api.twitch.tv/helix/chat/messages\", bytes.NewBuffer(body))\n\tif err != nil {\n\t\tfmt.Println(err)\n  // ..."
+    },
+    {
+      "name": "sendChatCommand",
+      "file": "chat.go",
+      "folder": "root",
+      "line": 153,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "chatUi.go",
+          "name": "chatUi.go",
+          "count": 1
+        }
+      ],
+      "code": "func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {\n\treturn func() tea.Msg {\n\t\tresp := sendChatMessage(broadcasterID, userID, accessToken, message)\n\t\tif !resp.IsSent {\n\t\t\treturn SendResultMessage{\n\t\t\t\tOk:  false,\n\t\t\t\tErr: errors.New(resp.DropReason.Message),\n\t\t\t}\n\t\t}\n\t\treturn SendResultMessage{Ok: true}\n\n\t}\n}\n\nfunc postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {\n  // ..."
+    },
+    {
+      "name": "postSubscribe",
+      "file": "chat.go",
+      "folder": "root",
+      "line": 167,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {\n\tdata := SubscriptionRequest{\n\t\tType:    \"channel.chat.message\",\n\t\tVersion: \"1\",\n\t\tCondition: Condition{\n\t\t\tBroadcasterUserID: broadcasterID,\n\t\t\tUserID:            userID,\n\t\t},\n\t\tTransport: Transport{\n\t\t\tMethod:    \"websocket\",\n\t\t\tSessionID: sessionID,\n\t\t},\n\t}\n\n\tbody, err := json.Marshal(data)\n  // ..."
+    },
+    {
+      "name": "connectAndListen",
+      "file": "chat.go",
+      "folder": "root",
+      "line": 206,
+      "internalCalls": 1,
+      "externalCalls": 2,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 2
+        }
+      ],
+      "code": "func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {\n\t// Open WebSocket connection\n\tconn, _, err := websocket.Dial(ctx, \"wss://eventsub.wss.twitch.tv/ws\", nil)\n\tif err != nil {\n\t\tfmt.Println(err)\n\t\treturn\n\t}\n\tdefer conn.CloseNow()\n\n\t// Start infinite read loop\n\t// We keep listening forever because Twitch will keep sending us messages\n\tfor {\n\t\t// Read next message from Twitch\n\t\t// This BLOCKS meaning it waits until next message comes\n\t\t_, msg, err := conn.Read(ctx)\n  // ..."
+    },
+    {
+      "name": "spawnChatWindow",
+      "file": "chat.go",
+      "folder": "root",
+      "line": 277,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 1
+        }
+      ],
+      "code": "func spawnChatWindow(broadcasterID, userID, accessToken string) {\n\tfmt.Println(\"In chat func\")\n\n\tcmd := exec.Command(\"/usr/bin/ghostty\", \"-e\", \"bash\", \"-c\", \"./tuiwatchers --chat \"+clientID+\" \"+broadcasterID+\" \"+userID+\" \"+accessToken+\";exec bash\")\n\terr := cmd.Start()\n\tif err != nil {\n\t\tfmt.Println(\"Terminal window opening error\", err)\n\t\treturn\n\t}\n}\n"
+    },
+    {
+      "name": "InitialChatModel",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 37,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 1
+        }
+      ],
+      "code": "func InitialChatModel(broadcasterID, userID, accessToken string) ChatModel {\n\tti := textinput.New()\n\tti.Placeholder = \"Enter Chat Message Here\"\n\tti.SetVirtualCursor(false)\n\tti.Focus()\n\t// Twitch does not allow sending messages > 500 chars\n\tti.CharLimit = 500\n\tti.SetWidth(1)\n\n\tviewport := viewport.New()\n\n\treturn ChatModel{\n\t\tTextInput:     ti,\n\t\tViewport:      viewport,\n\t\tMessages:      []string{},\n  // ..."
+    },
+    {
+      "name": "Init",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 58,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "ui.go",
+          "name": "ui.go",
+          "count": 1
+        }
+      ],
+      "code": "func (cm ChatModel) Init() tea.Cmd {\n\treturn tea.Batch(textinput.Blink)\n}\n\nfunc (cm ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase tea.WindowSizeMsg:\n\t\tcm.Width = msg.Width\n\t\tcm.Height = msg.Height\n\n\t\theaderHeight := lipgloss.Height(cm.headerView())\n\t\tfooterHeight := lipgloss.Height(cm.footerView())\n\t\tinputHeight := lipgloss.Height(cm.TextInput.View())\n\n\t\tcm.TextInput.SetWidth(msg.Width - 2)\n  // ..."
+    },
+    {
+      "name": "Update",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 62,
+      "internalCalls": 2,
+      "externalCalls": 3,
+      "totalCalls": 5,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "ui.go",
+          "name": "ui.go",
+          "count": 3
+        }
+      ],
+      "code": "func (cm ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase tea.WindowSizeMsg:\n\t\tcm.Width = msg.Width\n\t\tcm.Height = msg.Height\n\n\t\theaderHeight := lipgloss.Height(cm.headerView())\n\t\tfooterHeight := lipgloss.Height(cm.footerView())\n\t\tinputHeight := lipgloss.Height(cm.TextInput.View())\n\n\t\tcm.TextInput.SetWidth(msg.Width - 2)\n\t\tcm.Viewport.SetWidth(msg.Width)\n\t\tcm.Viewport.SetHeight(msg.Height - headerHeight - inputHeight - footerHeight)\n\n\t\treturn cm, nil\n  // ..."
+    },
+    {
+      "name": "View",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 108,
+      "internalCalls": 4,
+      "externalCalls": 3,
+      "totalCalls": 7,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "ui.go",
+          "name": "ui.go",
+          "count": 3
+        }
+      ],
+      "code": "func (cm ChatModel) View() tea.View {\n\t// layout header viewport input footer\n\tcontent := lipgloss.JoinVertical(\n\t\tlipgloss.Top,\n\t\tcm.headerView(),\n\t\tcm.Viewport.View(),\n\t\tcm.TextInput.View(),\n\t\tcm.footerView(),\n\t)\n\tview := tea.NewView(content)\n\treturn view\n}\n\nfunc (cm ChatModel) headerView() string { return \"Chat\\n\" }\nfunc (cm ChatModel) footerView() string {\n  // ..."
+    },
+    {
+      "name": "headerView",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 121,
+      "internalCalls": 3,
+      "externalCalls": 0,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func (cm ChatModel) headerView() string { return \"Chat\\n\" }\nfunc (cm ChatModel) footerView() string {\n\tif cm.Status != \"\" {\n\t\treturn \"\\n\" + cm.Status\n\t}\n\treturn \"\\nESC TO QUIT\"\n}\n"
+    },
+    {
+      "name": "footerView",
+      "file": "chatUi.go",
+      "folder": "root",
+      "line": 122,
+      "internalCalls": 3,
+      "externalCalls": 0,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func (cm ChatModel) footerView() string {\n\tif cm.Status != \"\" {\n\t\treturn \"\\n\" + cm.Status\n\t}\n\treturn \"\\nESC TO QUIT\"\n}\n"
+    },
+    {
+      "name": "startMPVWithStream",
+      "file": "player.go",
+      "folder": "root",
+      "line": 18,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 1
+        }
+      ],
+      "code": "func startMPVWithStream(channel tea.Model) error {\n\tvar selectedChannelGame string\n\tselectedChannel := channel.(Model).SelectedChannel\n\tif item, ok := channel.(Model).ChannelList.SelectedItem().(ChannelInfo); ok {\n\t\tselectedChannelGame = item.GameName\n\t}\n\n\tmpvInstance := exec.Command(\"/usr/bin/mpv\", \"https://twitch.tv/\"+selectedChannel)\n\tfmt.Printf(\"Starting mpv instance watching channel %s who is streaming %s\", selectedChannel, selectedChannelGame)\n\n\toutput, err := mpvInstance.CombinedOutput()\n\tif err != nil {\n\t\tif strings.Contains(string(output), \"ytdl\") {\n\t\t\tfmt.Println(\"\\nSeems like you dont have yt-dlp downloaded\")\n\t\t\tfmt.Println(\"Do you want me to download it and try again\")\n  // ..."
+    },
+    {
+      "name": "saveToken",
+      "file": "storage.go",
+      "folder": "root",
+      "line": 10,
+      "internalCalls": 2,
+      "externalCalls": 1,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "auth.go",
+          "name": "auth.go",
+          "count": 1
+        }
+      ],
+      "code": "func saveToken(path, token, userID string) error {\n\tfile := TokenFile{\n\t\tAccessToken: token,\n\t\tUserID:      userID,\n\t}\n\tbytesWrite, err := json.MarshalIndent(file, \"\", \" \")\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn os.WriteFile(path, bytesWrite, 0666)\n}\n\nfunc tokenLoad(path string) (TokenFile, error) {\n\tbytesRead, err := os.ReadFile(path)\n\tif err != nil {\n  // ..."
+    },
+    {
+      "name": "tokenLoad",
+      "file": "storage.go",
+      "folder": "root",
+      "line": 22,
+      "internalCalls": 1,
+      "externalCalls": 2,
+      "totalCalls": 3,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "auth.go",
+          "name": "auth.go",
+          "count": 2
+        }
+      ],
+      "code": "func tokenLoad(path string) (TokenFile, error) {\n\tbytesRead, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn TokenFile{}, err\n\t}\n\tvar tokenFile TokenFile\n\tif err := json.Unmarshal(bytesRead, &tokenFile); err != nil {\n\t\treturn TokenFile{}, err\n\t}\n\treturn tokenFile, nil\n}\n\nfunc checkTokenFile(tokenFilePath string) error {\n\tif _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {\n\t\tfmt.Println(\"tokens.json not found... Creating\")\n  // ..."
+    },
+    {
+      "name": "checkTokenFile",
+      "file": "storage.go",
+      "folder": "root",
+      "line": 34,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "auth.go",
+          "name": "auth.go",
+          "count": 1
+        }
+      ],
+      "code": "func checkTokenFile(tokenFilePath string) error {\n\tif _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {\n\t\tfmt.Println(\"tokens.json not found... Creating\")\n\t\tif err := saveToken(tokenFilePath, \"\", \"\"); err != nil {\n\t\t\tfmt.Println(\"err creating token file:\", err)\n\t\t}\n\t}\n\treturn nil\n}\n"
+    },
+    {
+      "name": "FilterValue",
+      "file": "ui.go",
+      "folder": "root",
+      "line": 52,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func (chInfo ChannelInfo) FilterValue() string { return chInfo.BroadcasterName + \" \" + chInfo.GameName }\nfunc (chInfo ChannelInfo) Title() string       { return chInfo.BroadcasterName }\nfunc (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n  // ..."
+    },
+    {
+      "name": "Title",
+      "file": "ui.go",
+      "folder": "root",
+      "line": 53,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func (chInfo ChannelInfo) Title() string       { return chInfo.BroadcasterName }\nfunc (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n  // ..."
+    },
+    {
+      "name": "Description",
+      "file": "ui.go",
+      "folder": "root",
+      "line": 54,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func (chInfo ChannelInfo) Description() string {\n\treturn fmt.Sprintf(\"%s - %d viewers\", chInfo.GameName, chInfo.ViewCount)\n}\n\nfunc newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n\tchannelList.Title = \"Live channels\"\n  // ..."
+    },
+    {
+      "name": "newChannelList",
+      "file": "ui.go",
+      "folder": "root",
+      "line": 58,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func newChannelList(channels []ChannelInfo) list.Model {\n\titems := make([]list.Item, 0, len(channels))\n\tfor _, channel := range channels {\n\t\titems = append(items, channel)\n\t}\n\n\tdelegate := list.NewDefaultDelegate()\n\tdelegate.SetSpacing(1)\n\n\tchannelList := list.New(items, delegate, 0, 0)\n\tchannelList.Title = \"Live channels\"\n\tchannelList.SetFilteringEnabled(false)\n\tchannelList.SetShowStatusBar(false)\n\tchannelList.SetShowHelp(false)\n\tchannelList.DisableQuitKeybindings()\n  // ..."
+    },
+    {
+      "name": "initialModel",
+      "file": "ui.go",
+      "folder": "root",
+      "line": 76,
+      "internalCalls": 1,
+      "externalCalls": 1,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [
+        {
+          "file": "main.go",
+          "name": "main.go",
+          "count": 1
+        }
+      ],
+      "code": "func initialModel() Model {\n\tmySpinner := spinner.New()\n\tmySpinner.Spinner = spinner.Dot\n\tmySpinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(\"205\"))\n\n\treturn Model{\n\t\tState:   pageAuthentication,\n\t\tSpinner: mySpinner,\n\t}\n}\n\nfunc (m Model) Init() tea.Cmd {\n\treturn tea.Batch(m.Spinner.Tick, authCommand())\n}\n\n  // ..."
+    },
+    {
+      "name": "printFollowData",
+      "file": "main.go",
+      "folder": "root",
+      "line": 79,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "// func printFollowData(followDataList FollowDataList) {\n// \tcount := 0\n// \tfmt.Println(\"Channels that are live\")\n// \tfor _, ch := range followDataList.Data {\n// \t\tif ch.Type == \"live\" {\n// \t\t\tcount += 1\n// \t\t\tfmt.Printf(\"  - %s IS LIVE\\n\", ch.UserName)\n// \t\t}\n// \t}\n// \tfmt.Println(\"Count of live streams: \", count)\n// }\n\n// func readInput(out chan<- string) {\n// \tscanner := bufio.NewScanner(os.Stdin)\n// \tif scanner.Scan() {\n  // ..."
+    },
+    {
+      "name": "readInput",
+      "file": "main.go",
+      "folder": "root",
+      "line": 91,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "// func readInput(out chan<- string) {\n// \tscanner := bufio.NewScanner(os.Stdin)\n// \tif scanner.Scan() {\n// \t\tout <- scanner.Text()\n// \t\tif scanner.Err() != nil {\n// \t\t\tfmt.Print(scanner.Err().Error())\n// \t\t}\n// \t}\n// }\n//\n// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {\n// \tfor message := range out {\n// \t\tsendChatMessage(broadcasterID, userID, accessToken, message)\n// \t}\n// }\n  // ..."
+    },
+    {
+      "name": "sendLoop",
+      "file": "main.go",
+      "folder": "root",
+      "line": 101,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {\n// \tfor message := range out {\n// \t\tsendChatMessage(broadcasterID, userID, accessToken, message)\n// \t}\n// }\n\nfunc openChat() {\n\tbroadcasterID := os.Args[3]\n\tuserID := os.Args[4]\n\taccessToken := os.Args[5]\n\n\tfmt.Println(\"CHAT\")\n\tfmt.Println(\"Starting chat window\")\n\n\tchatModel := InitialChatModel(broadcasterID, userID, accessToken)\n  // ..."
+    },
+    {
+      "name": "openChat",
+      "file": "main.go",
+      "folder": "root",
+      "line": 107,
+      "internalCalls": 2,
+      "externalCalls": 0,
+      "totalCalls": 2,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func openChat() {\n\tbroadcasterID := os.Args[3]\n\tuserID := os.Args[4]\n\taccessToken := os.Args[5]\n\n\tfmt.Println(\"CHAT\")\n\tfmt.Println(\"Starting chat window\")\n\n\tchatModel := InitialChatModel(broadcasterID, userID, accessToken)\n\tprogram := tea.NewProgram(chatModel)\n\n\t// channel for incoming messages\n\tincoming := make(chan IncomingChatMessage, 50)\n\n\tctx, cancel := context.WithCancel(context.Background())\n  // ..."
+    },
+    {
+      "name": "main",
+      "file": "main.go",
+      "folder": "root",
+      "line": 155,
+      "internalCalls": 1,
+      "externalCalls": 0,
+      "totalCalls": 1,
+      "isExported": false,
+      "isClassMethod": false,
+      "isTopLevel": true,
+      "type": "function",
+      "callers": [],
+      "code": "func main() {\n\tif len(os.Args) >= 2 {\n\t\tswitch os.Args[1] {\n\t\tcase \"--chat\":\n\t\t\topenChat()\n\t\t\treturn\n\t\t}\n\t}\n\n\tmodel := initialModel()\n\tprogram := tea.NewProgram(model)\n\tselectedChannel, err := program.Run()\n\tif err != nil {\n\t\tfmt.Printf(\"Whoops an error has occurred: %v\", err)\n\t\tos.Exit(1)\n  // ..."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+digraph CallGraph {
+  rankdir=LR;
+  node [shape=box, fontname="Courier"];
+
+  main_main [label="main.go::main()"];
+  main_openChat [label="main.go::openChat()"];
+
+  ui_initialModel [label="ui.go::initialModel()"];
+  ui_Model_Init [label="ui.go::(Model).Init()"];
+  ui_Model_Update [label="ui.go::(Model).Update()"];
+  ui_Model_View [label="ui.go::(Model).View()"];
+  ui_newChannelList [label="ui.go::newChannelList()"];
+
+  auth_authCommand [label="auth.go::authCommand()"];
+  auth_getUserToken [label="auth.go::getUserToken()"];
+  auth_validateToken [label="auth.go::validateToken()"];
+
+  api_getAuthenticatedUser [label="api.go::getAuthenticatedUser()"];
+  api_getFollowedChannels [label="api.go::getFollowedChannels()"];
+
+  storage_checkTokenFile [label="storage.go::checkTokenFile()"];
+  storage_tokenLoad [label="storage.go::tokenLoad()"];
+  storage_saveToken [label="storage.go::saveToken()"];
+
+  chat_spawnChatWindow [label="chat.go::spawnChatWindow()"];
+  chat_connectAndListen [label="chat.go::connectAndListen()"];
+  chat_postSubscribe [label="chat.go::postSubscribe()"];
+  chat_sendChatCommand [label="chat.go::sendChatCommand()"];
+  chat_sendChatMessage [label="chat.go::sendChatMessage()"];
+
+  chatUi_InitialChatModel [label="chatUi.go::InitialChatModel()"];
+  chatUi_Init [label="chatUi.go::(ChatModel).Init()"];
+  chatUi_Update [label="chatUi.go::(ChatModel).Update()"];
+  chatUi_View [label="chatUi.go::(ChatModel).View()"];
+  chatUi_headerView [label="chatUi.go::(ChatModel).headerView()"];
+  chatUi_footerView [label="chatUi.go::(ChatModel).footerView()"];
+
+  player_startMPV [label="player.go::startMPVWithStream()"];
+
+  bubbletea [label="bubbletea runtime", shape=ellipse, style=dashed];
+
+  main_main -> main_openChat [label="--chat"];
+  main_main -> ui_initialModel;
+  main_main -> chat_spawnChatWindow;
+  main_main -> player_startMPV;
+
+  main_openChat -> chatUi_InitialChatModel;
+  main_openChat -> chat_connectAndListen [label="goroutine"];
+
+  ui_Model_Init -> auth_authCommand;
+  ui_Model_Update -> ui_newChannelList;
+
+  auth_authCommand -> storage_checkTokenFile;
+  auth_authCommand -> storage_tokenLoad [label="tokenLoad x2"];
+  auth_authCommand -> auth_validateToken;
+  auth_authCommand -> auth_getUserToken;
+  auth_authCommand -> api_getAuthenticatedUser;
+  auth_authCommand -> storage_saveToken;
+  auth_authCommand -> api_getFollowedChannels;
+
+  storage_checkTokenFile -> storage_saveToken;
+
+  chat_sendChatCommand -> chat_sendChatMessage;
+  chat_connectAndListen -> chat_postSubscribe;
+
+  chatUi_Update -> chat_sendChatCommand;
+  chatUi_Update -> chatUi_headerView;
+  chatUi_Update -> chatUi_footerView;
+  chatUi_View -> chatUi_headerView;
+  chatUi_View -> chatUi_footerView;
+
+  bubbletea -> ui_Model_Init [style=dashed];
+  bubbletea -> ui_Model_Update [style=dashed];
+  bubbletea -> ui_Model_View [style=dashed];
+  bubbletea -> chatUi_Init [style=dashed];
+  bubbletea -> chatUi_Update [style=dashed];
+  bubbletea -> chatUi_View [style=dashed];
+}

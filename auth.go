@@ -18,25 +18,27 @@ const (
 	TwitchOauthURL = "https://id.twitch.tv/oauth2/"
 )
 
-func getUserToken(clientID string) AccessToken {
+// deviceToken returns the Device Token returned by Twitch device API
+func deviceToken(clientID string) DeviceCodeResponse {
 	resp, err := http.PostForm(TwitchOauthURL+"device", url.Values{
 		"client_id": {clientID},
 		"scopes":    {"user:read:follows user:write:chat user:read:chat"},
 	})
 	if err != nil {
 		fmt.Println("error:", err)
-		return AccessToken{}
+		return DeviceCodeResponse{}
 	}
 	defer resp.Body.Close()
 
-	var deviceCode DeviceCodeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&deviceCode); err != nil {
+	var deviceCodeResponse DeviceCodeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&deviceCodeResponse); err != nil {
 		fmt.Println("error decoding:", err)
-		return AccessToken{}
+		return DeviceCodeResponse{}
 	}
+	return deviceCodeResponse
+}
 
-	fmt.Printf("\nGo to: %s and Input Code: %s\n", deviceCode.VerificationURI, deviceCode.UserCode)
-
+func getUserToken(deviceCode DeviceCodeResponse) AccessToken {
 	for {
 		time.Sleep(time.Duration(deviceCode.Interval) * time.Second)
 
@@ -60,7 +62,6 @@ func getUserToken(clientID string) AccessToken {
 		if userToken.AccessToken != "" {
 			return userToken
 		}
-		fmt.Print("Waiting for authorization...")
 	}
 }
 
@@ -88,7 +89,7 @@ func validateToken(accessTokenParam string) bool {
 	return true
 }
 
-func authCommand() tea.Cmd {
+func authStartCommand() tea.Cmd {
 	return func() tea.Msg {
 		if err := checkTokenFile(tokenFilePath); err != nil {
 			return AuthErrorMessage{Err: err}
@@ -99,54 +100,52 @@ func authCommand() tea.Cmd {
 			return AuthErrorMessage{Err: err}
 		}
 
-		if !validateToken(tokenFile.AccessToken) {
-			userToken := getUserToken(clientID)
-			if userToken.AccessToken == "" {
-				return AuthErrorMessage{Err: errors.New("authentication failed")}
+		if validateToken(tokenFile.AccessToken) {
+			followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+			if len(followDataList.Data) == 0 {
+				return AuthErrorMessage{Err: errors.New("no followed channels found")}
 			}
 
-			authUser := getAuthenticatedUser(clientID, userToken)
-			if authUser.ID == "" {
-				return AuthErrorMessage{Err: errors.New("could not fetch user data")}
+			channels := make([]ChannelInfo, 0, len(followDataList.Data))
+			ids := make(map[string]string)
+			for _, channel := range followDataList.Data {
+				if channel.Type != "live" {
+					continue
+				}
+				channels = append(channels, ChannelInfo{
+					BroadcasterName: channel.UserName,
+					GameName:        channel.GameName,
+					ViewCount:       channel.ViewerCount,
+				})
+				ids[channel.UserName] = channel.UserID
 			}
 
-			if err := saveToken(tokenFilePath, userToken.AccessToken, authUser.ID); err != nil {
-				return AuthErrorMessage{Err: err}
+			if len(channels) == 0 {
+				return AuthErrorMessage{Err: errors.New("no live channels found")}
+			}
+
+			return AuthSuccessMessage{
+				ChannelList:    channels,
+				BroadcasterIDs: ids,
+				TokenFile:      tokenFile,
 			}
 		}
 
-		tokenFile, err = tokenLoad(tokenFilePath)
-		if err != nil {
-			return AuthErrorMessage{Err: err}
+		deviceCode := deviceToken(clientID)
+		if deviceCode.DeviceCode == " " {
+			return AuthErrorMessage{Err: errors.New("Could not get device code")}
 		}
+		return AuthDeviceCodeMessage{DeviceCode: deviceCode}
+	}
+}
 
-		followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
-		if len(followDataList.Data) == 0 {
-			return AuthErrorMessage{Err: errors.New("no followed channels found")}
+func authPollCommand(deviceCode DeviceCodeResponse) tea.Cmd {
+	return func() tea.Msg {
+		userToken := getUserToken(deviceCode)
+		if userToken.AccessToken == "" {
+			return AuthErrorMessage{Err: errors.New("authentication failed")}
 		}
+		return AuthUserTokenMessage{UserToken: userToken}
 
-		channels := make([]ChannelInfo, 0, len(followDataList.Data))
-		ids := make(map[string]string)
-		for _, channel := range followDataList.Data {
-			if channel.Type != "live" {
-				continue
-			}
-			channels = append(channels, ChannelInfo{
-				BroadcasterName: channel.UserName,
-				GameName:        channel.GameName,
-				ViewCount:       channel.ViewerCount,
-			})
-			ids[channel.UserName] = channel.UserID
-		}
-
-		if len(channels) == 0 {
-			return AuthErrorMessage{Err: errors.New("no live channels found")}
-		}
-
-		return AuthSuccessMessage{
-			ChannelList:    channels,
-			BroadcasterIDs: ids,
-			TokenFile:      tokenFile,
-		}
 	}
 }

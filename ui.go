@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"charm.land/bubbles/v2/list"
@@ -31,6 +32,8 @@ type Model struct {
 	TokenFile       TokenFile
 	WindowWidth     int
 	WindowHeight    int
+	AuthStatus      string
+	DeviceCode      DeviceCodeResponse
 }
 
 type ChannelInfo struct {
@@ -47,6 +50,15 @@ type AuthSuccessMessage struct {
 
 type AuthErrorMessage struct {
 	Err error
+}
+
+type AuthDeviceCodeMessage struct {
+	DeviceCode DeviceCodeResponse
+}
+
+type AuthUserTokenMessage struct {
+	UserToken AccessToken
+	Err       error
 }
 
 func (chInfo ChannelInfo) FilterValue() string { return chInfo.BroadcasterName + " " + chInfo.GameName }
@@ -85,7 +97,7 @@ func initialModel() Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.Spinner.Tick, authCommand())
+	return tea.Batch(m.Spinner.Tick, authStartCommand())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -106,6 +118,68 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.State = pageQuitting
 		m.Err = msg.Err
 		return m, tea.Quit
+	case AuthDeviceCodeMessage:
+		m.DeviceCode = msg.DeviceCode
+		m.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
+		return m, authPollCommand(msg.DeviceCode)
+	case AuthUserTokenMessage:
+		if msg.Err != nil && msg.UserToken.AccessToken == " " {
+			m.State = pageQuitting
+			m.Err = msg.Err
+			return m, tea.Quit
+		}
+
+		authUser := getAuthenticatedUser(clientID, msg.UserToken)
+		if authUser.ID == "" {
+			m.State = pageQuitting
+			m.Err = errors.New("Could not fetch user data")
+			return m, tea.Quit
+		}
+
+		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
+			m.State = pageQuitting
+			m.Err = err
+			return m, tea.Quit
+		}
+		tokenFile, err := tokenLoad(tokenFilePath)
+		if err != nil {
+			m.State = pageQuitting
+			m.Err = err
+			return m, tea.Quit
+		}
+		followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+		if len(followDataList.Data) == 0 {
+			m.State = pageQuitting
+			m.Err = errors.New("no followed channels found")
+			return m, tea.Quit
+		}
+		channels := make([]ChannelInfo, 0, len(followDataList.Data))
+		ids := make(map[string]string)
+		for _, channel := range followDataList.Data {
+			if channel.Type != "live" {
+				continue
+			}
+			channels = append(channels, ChannelInfo{
+				BroadcasterName: channel.UserName,
+				GameName:        channel.GameName,
+				ViewCount:       channel.ViewerCount,
+			})
+			ids[channel.UserName] = channel.UserID
+		}
+
+		if len(channels) == 0 {
+			m.State = pageQuitting
+			m.Err = errors.New("no live channels found")
+			return m, tea.Quit
+		}
+
+		m.State = pageStreams
+		m.ChannelList = newChannelList(channels)
+		m.BroadcasterIDs = ids
+		m.TokenFile = tokenFile
+		h, v := docStyle.GetFrameSize()
+		m.ChannelList.SetSize(m.WindowWidth-h, m.WindowHeight-v)
+		return m, tea.ClearScreen
 	case tea.WindowSizeMsg:
 		m.WindowWidth = msg.Width
 		m.WindowHeight = msg.Height
@@ -144,7 +218,11 @@ func (m Model) View() tea.View {
 
 	switch m.State {
 	case pageAuthentication:
-		str := fmt.Sprintf("%s Authenticating...", m.Spinner.View())
+		status := "Authenticating..."
+		if m.AuthStatus != ""{
+			status = m.AuthStatus
+		}
+		str := fmt.Sprintf("%s %s", m.Spinner.View(), status)
 		v := tea.NewView(docStyle.Render(str))
 		v.AltScreen = true
 		return v
