@@ -65,44 +65,11 @@ type FollowDataList struct {
 }
 
 type TokenFile struct {
-	AccessToken string `json:"access_token"`
-	UserID      string `json:"user_id"`
+	ClientId     string
+	AccessToken  string `json:"access_token"`
+	UserID       string `json:"user_id"`
+	RefreshToken string `json:"refresh_token"`
 }
-
-// type validateResponse struct {
-// 	ClientID  string `json:"client_id"`
-// 	Login     string `json:"login"`
-// 	UserID    string `json:"user_id"`
-// 	ExpiresIn int    `json:"expires_in"`
-// }
-
-// func printFollowData(followDataList FollowDataList) {
-// 	count := 0
-// 	fmt.Println("Channels that are live")
-// 	for _, ch := range followDataList.Data {
-// 		if ch.Type == "live" {
-// 			count += 1
-// 			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
-// 		}
-// 	}
-// 	fmt.Println("Count of live streams: ", count)
-// }
-
-// func readInput(out chan<- string) {
-// 	scanner := bufio.NewScanner(os.Stdin)
-// 	if scanner.Scan() {
-// 		out <- scanner.Text()
-// 		if scanner.Err() != nil {
-// 			fmt.Print(scanner.Err().Error())
-// 		}
-// 	}
-// }
-//
-// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
-// 	for message := range out {
-// 		sendChatMessage(broadcasterID, userID, accessToken, message)
-// 	}
-// }
 
 func openChat() {
 	broadcasterID := os.Args[3]
@@ -121,26 +88,11 @@ func openChat() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// out := make(chan string)
-	// go readInput(out)
-	// go sendLoop(out, os.Args[3], os.Args[4], os.Args[5])
-
-	// // Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
-	// done := make(chan struct{})
-	// go func() {
-	// 	//ClientID, BroadcasterID, UserID, AccessToken
-	// 	connectAndListen(os.Args[3], os.Args[4], os.Args[5])
-	// 	close(done)
-	// }()
-	//
-	// // Wait for the websocket goroutine to finish before exiting
-	// <-done
-
 	//websocket listener
 	go connectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
 
 	go func() {
-		for msg := range incoming{
+		for msg := range incoming {
 			program.Send(msg)
 		}
 	}()

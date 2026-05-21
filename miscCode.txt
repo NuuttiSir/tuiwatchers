@@ -1,0 +1,89 @@
+// NOTE: Was in api.go
+// func getUserData(username, clientID string, appToken AccessToken) UserData {
+// 	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)
+// 	if err != nil {
+// 		fmt.Println("error:", err)
+// 		return UserData{}
+// 	}
+//
+// 	if username != "" {
+// 		q := req.URL.Query()
+// 		q.Add("login", username)
+// 		req.URL.RawQuery = q.Encode()
+// 	}
+//
+// 	req.Header.Set("Authorization", "Bearer "+appToken.AccessToken)
+// 	req.Header.Set("Client-Id", clientID)
+//
+// 	client := &http.Client{}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		fmt.Println("error:", err)
+// 		return UserData{}
+// 	}
+// 	defer resp.Body.Close()
+//
+// 	var userDataList UserDataList
+// 	if err := json.NewDecoder(resp.Body).Decode(&userDataList); err != nil {
+// 		fmt.Println("error decoding:", err)
+// 		return UserData{}
+// 	}
+// 	if len(userDataList.Data) == 0 {
+// 		fmt.Println("user not found")
+// 		return UserData{}
+// 	}
+// 	return userDataList.Data[0]
+// }
+
+// NOTE: Was in main.go
+// type validateResponse struct {
+// 	ClientID  string `json:"client_id"`
+// 	Login     string `json:"login"`
+// 	UserID    string `json:"user_id"`
+// 	ExpiresIn int    `json:"expires_in"`
+// }
+
+// func printFollowData(followDataList FollowDataList) {
+// 	count := 0
+// 	fmt.Println("Channels that are live")
+// 	for _, ch := range followDataList.Data {
+// 		if ch.Type == "live" {
+// 			count += 1
+// 			fmt.Printf("  - %s IS LIVE\n", ch.UserName)
+// 		}
+// 	}
+// 	fmt.Println("Count of live streams: ", count)
+// }
+
+// func readInput(out chan<- string) {
+// 	scanner := bufio.NewScanner(os.Stdin)
+// 	if scanner.Scan() {
+// 		out <- scanner.Text()
+// 		if scanner.Err() != nil {
+// 			fmt.Print(scanner.Err().Error())
+// 		}
+// 	}
+// }
+//
+// func sendLoop(out <-chan string, broadcasterID, userID, accessToken string) {
+// 	for message := range out {
+// 		sendChatMessage(broadcasterID, userID, accessToken, message)
+// 	}
+// }
+
+// NOTE: Was in main.go in func openChat()
+// out := make(chan string)
+// go readInput(out)
+// go sendLoop(out, os.Args[3], os.Args[4], os.Args[5])
+
+// // Start the WebSocket listener in goroutine so it runs in background while MPV runs as well
+// done := make(chan struct{})
+// go func() {
+// 	//ClientID, BroadcasterID, UserID, AccessToken
+// 	connectAndListen(os.Args[3], os.Args[4], os.Args[5])
+// 	close(done)
+// }()
+//
+// // Wait for the websocket goroutine to finish before exiting
+// <-done
+

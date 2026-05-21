@@ -1,0 +1,549 @@
+digraph gocallvis {
+    label="";
+    labeljust="l";
+    fontname="Arial";
+    fontsize="14";
+    rankdir="LR";
+    bgcolor="lightgray";
+    style="solid";
+    penwidth="0.5";
+    pad="0.0";
+    nodesep="0.35";
+
+    node [shape="box" style="filled,rounded" fillcolor="honeydew" fontname="Verdana" penwidth="1.0" margin="0.16,0.0"];
+    edge [minlen="10"]
+
+    subgraph "cluster_focus" {
+        bgcolor="#e6ecfa";
+label="main";
+labelloc="t";
+labeljust="c";
+fontsize="18";
+        
+        "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" [ fillcolor="lightblue" label="(ChatModel).Update" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.ChatModel).Update | defined in chatUi.go:62\nat chatUi.go:93: calling [(*charm.land/bubbles/v2/viewport.Model).GotoBottom]\nat chatUi.go:68: calling [charm.land/lipgloss/v2.Height]\nat chatUi.go:69: calling [charm.land/lipgloss/v2.Height]\nat chatUi.go:70: calling [charm.land/lipgloss/v2.Height]\nat chatUi.go:70: calling [(charm.land/bubbles/v2/textinput.Model).View]\nat chatUi.go:83: calling [(charm.land/bubbles/v2/textinput.Model).Value]\nat chatUi.go:88: calling [github.com/NuuttiSir/tuiwatchers.sendChatCommand]\nat chatUi.go:92: calling [strings.Join]\nat chatUi.go:104: calling [(charm.land/bubbles/v2/textinput.Model).Update]\nat chatUi.go:88: calling [charm.land/bubbletea/v2.Batch]\nat chatUi.go:74: calling [(*charm.land/bubbles/v2/viewport.Model).SetHeight]\nat chatUi.go:83: calling [strings.TrimSpace]\nat chatUi.go:79: calling [(charm.land/bubbletea/v2.KeyPressMsg).String]\nat chatUi.go:73: calling [(*charm.land/bubbles/v2/viewport.Model).SetWidth]\nat chatUi.go:68: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView]\nat chatUi.go:69: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView]\nat chatUi.go:72: calling [(*charm.land/bubbles/v2/textinput.Model).SetWidth]\nat chatUi.go:92: calling [(*charm.land/bubbles/v2/viewport.Model).SetContent]" ]
+        "(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView" [ tooltip="(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView | defined in chatUi.go:121" fillcolor="lightblue" label="(ChatModel).headerView" penwidth="0.5" ]
+        "(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView" [ tooltip="(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView | defined in chatUi.go:122" fillcolor="lightblue" label="(ChatModel).footerView" penwidth="0.5" ]
+        "github.com/NuuttiSir/tuiwatchers.sendChatCommand" [ fillcolor="lightblue" label="sendChatCommand" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.sendChatCommand | defined in chat.go:153" ]
+        "github.com/NuuttiSir/tuiwatchers.deviceToken" [ label="deviceToken" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.deviceToken | defined in auth.go:22\nat auth.go:23: calling [net/http.PostForm]\nat auth.go:34: calling [(*encoding/json.Decoder).Decode]\nat auth.go:28: calling [fmt.Println]\nat auth.go:35: calling [fmt.Println]\nat auth.go:34: calling [encoding/json.NewDecoder]" fillcolor="lightblue" ]
+        "github.com/NuuttiSir/tuiwatchers.tokenLoad" [ fillcolor="lightblue" label="tokenLoad" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.tokenLoad | defined in storage.go:22\nat storage.go:23: calling [os.ReadFile]\nat storage.go:28: calling [encoding/json.Unmarshal]" ]
+        "github.com/NuuttiSir/tuiwatchers.openChat$1" [ tooltip="github.com/NuuttiSir/tuiwatchers.openChat$1 | defined in main.go:142\nat main.go:144: calling [(*charm.land/bubbletea/v2.Program).Send]" fillcolor="lightblue" label="openChat$1" style="dotted,filled" ]
+        "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" [ fillcolor="lightblue" label="getFollowedChannels" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.getFollowedChannels | defined in api.go:49\nat api.go:57: calling [(net/url.Values).Add]\nat api.go:72: calling [io.ReadAll]\nat api.go:64: calling [(*net/http.Client).Do]\nat api.go:50: calling [net/http.NewRequest]\nat api.go:58: calling [(net/url.Values).Encode]\nat api.go:60: calling [(net/http.Header).Set]\nat api.go:61: calling [(net/http.Header).Set]\nat api.go:56: calling [(*net/url.URL).Query]\nat api.go:78: calling [encoding/json.NewDecoder]\nat api.go:78: calling [(*encoding/json.Decoder).Decode]\nat api.go:52: calling [fmt.Println]\nat api.go:66: calling [fmt.Println]\nat api.go:73: calling [fmt.Println]\nat api.go:79: calling [fmt.Println]" ]
+        "github.com/NuuttiSir/tuiwatchers.saveToken" [ fillcolor="lightblue" label="saveToken" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.saveToken | defined in storage.go:10\nat storage.go:15: calling [encoding/json.MarshalIndent]\nat storage.go:19: calling [os.WriteFile]" ]
+        "github.com/NuuttiSir/tuiwatchers.postSubscribe" [ fillcolor="lightblue" label="postSubscribe" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.postSubscribe | defined in chat.go:167\nat chat.go:198: calling [(*net/http.Client).Do]\nat chat.go:183: calling [fmt.Println]\nat chat.go:189: calling [fmt.Println]\nat chat.go:200: calling [fmt.Println]\nat chat.go:181: calling [encoding/json.Marshal]\nat chat.go:187: calling [bytes.NewBuffer]\nat chat.go:187: calling [net/http.NewRequest]\nat chat.go:193: calling [(net/http.Header).Set]\nat chat.go:194: calling [(net/http.Header).Set]\nat chat.go:195: calling [(net/http.Header).Set]" ]
+        "github.com/NuuttiSir/tuiwatchers.openChat" [ fillcolor="lightblue" label="openChat" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.openChat | defined in main.go:107\nat main.go:115: calling [github.com/NuuttiSir/tuiwatchers.InitialChatModel]\nat main.go:121: calling [context.WithCancel]\nat main.go:116: calling [charm.land/bubbletea/v2.NewProgram]\nat main.go:142: calling [github.com/NuuttiSir/tuiwatchers.openChat$1]\nat main.go:121: calling [context.Background]\nat main.go:148: calling [(*charm.land/bubbletea/v2.Program).Run]\nat main.go:112: calling [fmt.Println]\nat main.go:113: calling [fmt.Println]\nat main.go:150: calling [fmt.Println]\nat main.go:140: calling [github.com/NuuttiSir/tuiwatchers.connectAndListen]" ]
+        "github.com/NuuttiSir/tuiwatchers.InitialChatModel" [ fillcolor="lightblue" label="InitialChatModel" penwidth="1.5" tooltip="github.com/NuuttiSir/tuiwatchers.InitialChatModel | defined in chatUi.go:37\nat chatUi.go:46: calling [charm.land/bubbles/v2/viewport.New]\nat chatUi.go:40: calling [(*charm.land/bubbles/v2/textinput.Model).SetVirtualCursor]\nat chatUi.go:38: calling [charm.land/bubbles/v2/textinput.New]\nat chatUi.go:44: calling [(*charm.land/bubbles/v2/textinput.Model).SetWidth]\nat chatUi.go:41: calling [(*charm.land/bubbles/v2/textinput.Model).Focus]" ]
+        "github.com/NuuttiSir/tuiwatchers.connectAndListen" [ fillcolor="lightblue" label="connectAndListen" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.connectAndListen | defined in chat.go:206\nat chat.go:210: calling [fmt.Println]\nat chat.go:222: calling [fmt.Println]\nat chat.go:230: calling [fmt.Println]\nat chat.go:241: calling [fmt.Println]\nat chat.go:272: calling [fmt.Println]\nat chat.go:258: calling [fmt.Println]\nat chat.go:220: calling [(*github.com/coder/websocket.Conn).Read]\nat chat.go:228: calling [encoding/json.Unmarshal]\nat chat.go:247: calling [github.com/NuuttiSir/tuiwatchers.postSubscribe]\nat chat.go:213: calling [(*github.com/coder/websocket.Conn).CloseNow]\nat chat.go:208: calling [github.com/coder/websocket.Dial]" ]
+        "(github.com/NuuttiSir/tuiwatchers.Model).View" [ fillcolor="lightblue" label="(Model).View" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.Model).View | defined in ui.go:216\nat ui.go:231: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:226: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:247: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:237: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:242: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:225: calling [fmt.Sprintf]\nat ui.go:236: calling [fmt.Sprintf]\nat ui.go:225: calling [(charm.land/bubbles/v2/spinner.Model).View]\nat ui.go:231: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:226: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:247: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:237: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:242: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:230: calling [(charm.land/bubbles/v2/list.Model).View]" ]
+        "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" [ fillcolor="lightblue" label="getAuthenticatedUser" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser | defined in api.go:85\nat api.go:104: calling [io.ReadAll]\nat api.go:96: calling [(*net/http.Client).Do]\nat api.go:86: calling [net/http.NewRequest]\nat api.go:110: calling [encoding/json.NewDecoder]\nat api.go:88: calling [fmt.Println]\nat api.go:98: calling [fmt.Println]\nat api.go:105: calling [fmt.Println]\nat api.go:111: calling [fmt.Println]\nat api.go:115: calling [fmt.Println]\nat api.go:92: calling [(net/http.Header).Set]\nat api.go:93: calling [(net/http.Header).Set]\nat api.go:110: calling [(*encoding/json.Decoder).Decode]" ]
+        "(github.com/NuuttiSir/tuiwatchers.Model).Init" [ fillcolor="lightblue" label="(Model).Init" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.Model).Init | defined in ui.go:99\nat ui.go:100: calling [charm.land/bubbletea/v2.Batch]\nat ui.go:100: calling [github.com/NuuttiSir/tuiwatchers.authStartCommand]" ]
+        "github.com/NuuttiSir/tuiwatchers.authStartCommand" [ label="authStartCommand" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.authStartCommand | defined in auth.go:92" fillcolor="lightblue" ]
+        "github.com/NuuttiSir/tuiwatchers.initialModel" [ fillcolor="lightblue" label="initialModel" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.initialModel | defined in ui.go:88\nat ui.go:91: calling [(charm.land/lipgloss/v2.Style).Foreground]\nat ui.go:89: calling [charm.land/bubbles/v2/spinner.New]\nat ui.go:91: calling [charm.land/lipgloss/v2.NewStyle]\nat ui.go:91: calling [charm.land/lipgloss/v2.Color]" ]
+        "github.com/NuuttiSir/tuiwatchers.validateToken" [ fillcolor="lightblue" label="validateToken" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.validateToken | defined in auth.go:68\nat auth.go:69: calling [net/http.NewRequest]\nat auth.go:71: calling [fmt.Println]\nat auth.go:79: calling [fmt.Println]\nat auth.go:77: calling [(*net/http.Client).Do]\nat auth.go:74: calling [(net/http.Header).Set]" ]
+        "github.com/NuuttiSir/tuiwatchers.checkTokenFile" [ fillcolor="lightblue" label="checkTokenFile" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.checkTokenFile | defined in storage.go:34\nat storage.go:36: calling [fmt.Println]\nat storage.go:38: calling [fmt.Println]\nat storage.go:35: calling [os.Stat]\nat storage.go:37: calling [github.com/NuuttiSir/tuiwatchers.saveToken]\nat storage.go:35: calling [errors.Is]" ]
+        "(github.com/NuuttiSir/tuiwatchers.ChatModel).Init" [ label="(ChatModel).Init" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.ChatModel).Init | defined in chatUi.go:58\nat chatUi.go:59: calling [charm.land/bubbletea/v2.Batch]" fillcolor="lightblue" ]
+        "(github.com/NuuttiSir/tuiwatchers.ChannelInfo).Description" [ penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.ChannelInfo).Description | defined in ui.go:66\nat ui.go:67: calling [fmt.Sprintf]" fillcolor="lightblue" label="(ChannelInfo).Description" ]
+        "github.com/NuuttiSir/tuiwatchers.newChannelList" [ penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.newChannelList | defined in ui.go:70\nat ui.go:82: calling [(*charm.land/bubbles/v2/list.Model).SetShowStatusBar]\nat ui.go:79: calling [charm.land/bubbles/v2/list.New]\nat ui.go:84: calling [(*charm.land/bubbles/v2/list.Model).DisableQuitKeybindings]\nat ui.go:77: calling [(*charm.land/bubbles/v2/list.DefaultDelegate).SetSpacing]\nat ui.go:81: calling [(*charm.land/bubbles/v2/list.Model).SetFilteringEnabled]\nat ui.go:83: calling [(*charm.land/bubbles/v2/list.Model).SetShowHelp]\nat ui.go:76: calling [charm.land/bubbles/v2/list.NewDefaultDelegate]" fillcolor="lightblue" label="newChannelList" ]
+        "github.com/NuuttiSir/tuiwatchers.main" [ penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.main | defined in main.go:155\nat main.go:190: calling [github.com/NuuttiSir/tuiwatchers.startMPVWithStream]\nat main.go:169: calling [os.Exit]\nat main.go:168: calling [fmt.Printf]\nat main.go:159: calling [github.com/NuuttiSir/tuiwatchers.openChat]\nat main.go:189: calling [github.com/NuuttiSir/tuiwatchers.spawnChatWindow]\nat main.go:165: calling [charm.land/bubbletea/v2.NewProgram]\nat main.go:164: calling [github.com/NuuttiSir/tuiwatchers.initialModel]\nat main.go:166: calling [(*charm.land/bubbletea/v2.Program).Run]\nat main.go:174: calling [fmt.Println]\nat main.go:179: calling [fmt.Println]\nat main.go:185: calling [fmt.Println]" fillcolor="lightblue" label="main" ]
+        "github.com/NuuttiSir/tuiwatchers.spawnChatWindow" [ tooltip="github.com/NuuttiSir/tuiwatchers.spawnChatWindow | defined in chat.go:277\nat chat.go:278: calling [fmt.Println]\nat chat.go:283: calling [fmt.Println]\nat chat.go:280: calling [os/exec.Command]\nat chat.go:281: calling [(*os/exec.Cmd).Start]" fillcolor="lightblue" label="spawnChatWindow" penwidth="0.5" ]
+        "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" [ fillcolor="lightblue" label="startMPVWithStream" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.startMPVWithStream | defined in player.go:18\nat player.go:21: calling [(charm.land/bubbles/v2/list.Model).SelectedItem]\nat player.go:31: calling [fmt.Println]\nat player.go:32: calling [fmt.Println]\nat player.go:30: calling [strings.Contains]\nat player.go:35: calling [os.Exit]\nat player.go:28: calling [(*os/exec.Cmd).CombinedOutput]\nat player.go:26: calling [fmt.Printf]\nat player.go:25: calling [os/exec.Command]" ]
+        "github.com/NuuttiSir/tuiwatchers.sendChatMessage" [ label="sendChatMessage" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.sendChatMessage | defined in chat.go:104\nat chat.go:112: calling [fmt.Println]\nat chat.go:118: calling [fmt.Println]\nat chat.go:129: calling [fmt.Println]\nat chat.go:137: calling [fmt.Println]\nat chat.go:142: calling [fmt.Println]\nat chat.go:110: calling [encoding/json.Marshal]\nat chat.go:116: calling [bytes.NewBuffer]\nat chat.go:122: calling [(net/http.Header).Set]\nat chat.go:123: calling [(net/http.Header).Set]\nat chat.go:124: calling [(net/http.Header).Set]\nat chat.go:127: calling [(*net/http.Client).Do]\nat chat.go:116: calling [net/http.NewRequest]\nat chat.go:140: calling [encoding/json.Unmarshal]\nat chat.go:135: calling [io.ReadAll]" fillcolor="lightblue" ]
+        "(github.com/NuuttiSir/tuiwatchers.Model).Update" [ fillcolor="lightblue" label="(Model).Update" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.Model).Update | defined in ui.go:103\nat ui.go:123: calling [fmt.Sprintf]\nat ui.go:107: calling [(charm.land/bubbles/v2/spinner.Model).Update]\nat ui.go:209: calling [(charm.land/bubbles/v2/list.Model).Update]\nat ui.go:111: calling [github.com/NuuttiSir/tuiwatchers.newChannelList]\nat ui.go:177: calling [github.com/NuuttiSir/tuiwatchers.newChannelList]\nat ui.go:139: calling [github.com/NuuttiSir/tuiwatchers.saveToken]\nat ui.go:150: calling [github.com/NuuttiSir/tuiwatchers.getFollowedChannels]\nat ui.go:135: calling [errors.New]\nat ui.go:153: calling [errors.New]\nat ui.go:172: calling [errors.New]\nat ui.go:191: calling [(charm.land/bubbletea/v2.KeyPressMsg).String]\nat ui.go:124: calling [github.com/NuuttiSir/tuiwatchers.authPollCommand]\nat ui.go:144: calling [github.com/NuuttiSir/tuiwatchers.tokenLoad]\nat ui.go:114: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]\nat ui.go:180: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]\nat ui.go:187: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]\nat ui.go:132: calling [github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser]\nat ui.go:115: calling [(*charm.land/bubbles/v2/list.Model).SetSize]\nat ui.go:181: calling [(*charm.land/bubbles/v2/list.Model).SetSize]\nat ui.go:188: calling [(*charm.land/bubbles/v2/list.Model).SetSize]\nat ui.go:199: calling [(charm.land/bubbles/v2/list.Model).SelectedItem]" ]
+        "github.com/NuuttiSir/tuiwatchers.authPollCommand" [ fillcolor="lightblue" label="authPollCommand" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.authPollCommand | defined in auth.go:142" ]
+        "github.com/NuuttiSir/tuiwatchers.getUserToken" [ tooltip="github.com/NuuttiSir/tuiwatchers.getUserToken | defined in auth.go:41\nat auth.go:57: calling [encoding/json.NewDecoder]\nat auth.go:45: calling [net/http.PostForm]\nat auth.go:43: calling [time.Sleep]\nat auth.go:57: calling [(*encoding/json.Decoder).Decode]\nat auth.go:51: calling [fmt.Println]\nat auth.go:58: calling [fmt.Println]" fillcolor="lightblue" label="getUserToken" penwidth="0.5" ]
+        "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" [ fillcolor="lightblue" label="(ChatModel).View" penwidth="1.5" tooltip="(github.com/NuuttiSir/tuiwatchers.ChatModel).View | defined in chatUi.go:108\nat chatUi.go:110: calling [charm.land/lipgloss/v2.JoinVertical]\nat chatUi.go:117: calling [charm.land/bubbletea/v2.NewView]\nat chatUi.go:112: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView]\nat chatUi.go:113: calling [(charm.land/bubbles/v2/viewport.Model).View]\nat chatUi.go:115: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView]\nat chatUi.go:114: calling [(charm.land/bubbles/v2/textinput.Model).View]" ]
+        "github.com/NuuttiSir/tuiwatchers.init" [ fillcolor="lightblue" label="init" penwidth="0.5" tooltip="github.com/NuuttiSir/tuiwatchers.init | defined in .:0\nat ui.go:23: calling [charm.land/lipgloss/v2.NewStyle]\nat ui.go:23: calling [(charm.land/lipgloss/v2.Style).Margin]" ]
+        
+        subgraph "cluster_bytes" {
+        rank="sink";
+label="bytes";
+URL="/?f=bytes";
+penwidth="0.8";
+fillcolor="#E0FFE1";
+tooltip="package: bytes";
+fontsize="16";
+style="filled";
+fontname="Tahoma bold";
+        
+        "bytes.NewBuffer" [ tooltip="bytes.NewBuffer | defined in buffer.go:490" fillcolor="#adedad" label="NewBuffer" penwidth="1.5" ]
+        
+    }
+
+        subgraph "cluster_charm.land/bubbles/v2/list" {
+        fontsize="16";
+style="filled";
+fillcolor="lightyellow";
+fontname="Tahoma bold";
+rank="sink";
+label="list";
+penwidth="0.8";
+URL="/?f=charm.land/bubbles/v2/list";
+tooltip="package: charm.land/bubbles/v2/list";
+        
+        "(charm.land/bubbles/v2/list.Model).View" [ label="(Model).View" penwidth="1.5" tooltip="(charm.land/bubbles/v2/list.Model).View | defined in list.go:1042" fillcolor="moccasin" ]
+        "charm.land/bubbles/v2/list.NewDefaultDelegate" [ fillcolor="moccasin" label="NewDefaultDelegate" penwidth="1.5" tooltip="charm.land/bubbles/v2/list.NewDefaultDelegate | defined in defaultitem.go:97" ]
+        "(*charm.land/bubbles/v2/list.DefaultDelegate).SetSpacing" [ fillcolor="moccasin" label="(*DefaultDelegate).SetSpacing" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.DefaultDelegate).SetSpacing | defined in defaultitem.go:126" ]
+        "charm.land/bubbles/v2/list.New" [ fillcolor="moccasin" label="New" penwidth="1.5" tooltip="charm.land/bubbles/v2/list.New | defined in list.go:207" ]
+        "(*charm.land/bubbles/v2/list.Model).SetFilteringEnabled" [ fillcolor="moccasin" label="(*Model).SetFilteringEnabled" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.Model).SetFilteringEnabled | defined in list.go:258" ]
+        "(*charm.land/bubbles/v2/list.Model).SetShowStatusBar" [ fillcolor="moccasin" label="(*Model).SetShowStatusBar" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.Model).SetShowStatusBar | defined in list.go:329" ]
+        "(*charm.land/bubbles/v2/list.Model).SetShowHelp" [ fillcolor="moccasin" label="(*Model).SetShowHelp" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.Model).SetShowHelp | defined in list.go:364" ]
+        "(*charm.land/bubbles/v2/list.Model).DisableQuitKeybindings" [ fillcolor="moccasin" label="(*Model).DisableQuitKeybindings" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.Model).DisableQuitKeybindings | defined in list.go:661" ]
+        "(charm.land/bubbles/v2/list.Model).SelectedItem" [ fillcolor="moccasin" label="(Model).SelectedItem" penwidth="1.5" tooltip="(charm.land/bubbles/v2/list.Model).SelectedItem | defined in list.go:467" ]
+        "(*charm.land/bubbles/v2/list.Model).SetSize" [ fillcolor="moccasin" label="(*Model).SetSize" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/list.Model).SetSize | defined in list.go:695" ]
+        "(charm.land/bubbles/v2/list.Model).Update" [ penwidth="1.5" tooltip="(charm.land/bubbles/v2/list.Model).Update | defined in list.go:819" fillcolor="moccasin" label="(Model).Update" ]
+        
+    }
+
+        subgraph "cluster_charm.land/bubbles/v2/spinner" {
+        fillcolor="lightyellow";
+fontname="Tahoma bold";
+rank="sink";
+label="spinner";
+tooltip="package: charm.land/bubbles/v2/spinner";
+penwidth="0.8";
+fontsize="16";
+style="filled";
+URL="/?f=charm.land/bubbles/v2/spinner";
+        
+        "(charm.land/bubbles/v2/spinner.Model).View" [ penwidth="1.5" tooltip="(charm.land/bubbles/v2/spinner.Model).View | defined in spinner.go:160" fillcolor="moccasin" label="(Model).View" ]
+        "charm.land/bubbles/v2/spinner.New" [ fillcolor="moccasin" label="New" penwidth="1.5" tooltip="charm.land/bubbles/v2/spinner.New | defined in spinner.go:110" ]
+        "(charm.land/bubbles/v2/spinner.Model).Update" [ penwidth="1.5" tooltip="(charm.land/bubbles/v2/spinner.Model).Update | defined in spinner.go:131" fillcolor="moccasin" label="(Model).Update" ]
+        
+    }
+
+        subgraph "cluster_charm.land/bubbles/v2/textinput" {
+        fontsize="16";
+fillcolor="lightyellow";
+rank="sink";
+tooltip="package: charm.land/bubbles/v2/textinput";
+penwidth="0.8";
+style="filled";
+fontname="Tahoma bold";
+label="textinput";
+URL="/?f=charm.land/bubbles/v2/textinput";
+        
+        "(charm.land/bubbles/v2/textinput.Model).Update" [ fillcolor="moccasin" label="(Model).Update" penwidth="1.5" tooltip="(charm.land/bubbles/v2/textinput.Model).Update | defined in textinput.go:580" ]
+        "(charm.land/bubbles/v2/textinput.Model).View" [ label="(Model).View" penwidth="1.5" tooltip="(charm.land/bubbles/v2/textinput.Model).View | defined in textinput.go:684" fillcolor="moccasin" ]
+        "(*charm.land/bubbles/v2/textinput.Model).SetWidth" [ label="(*Model).SetWidth" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/textinput.Model).SetWidth | defined in textinput.go:205" fillcolor="moccasin" ]
+        "(charm.land/bubbles/v2/textinput.Model).Value" [ fillcolor="moccasin" label="(Model).Value" penwidth="1.5" tooltip="(charm.land/bubbles/v2/textinput.Model).Value | defined in textinput.go:235" ]
+        "charm.land/bubbles/v2/textinput.New" [ label="New" penwidth="1.5" tooltip="charm.land/bubbles/v2/textinput.New | defined in textinput.go:157" fillcolor="moccasin" ]
+        "(*charm.land/bubbles/v2/textinput.Model).SetVirtualCursor" [ tooltip="(*charm.land/bubbles/v2/textinput.Model).SetVirtualCursor | defined in textinput.go:183" fillcolor="moccasin" label="(*Model).SetVirtualCursor" penwidth="1.5" ]
+        "(*charm.land/bubbles/v2/textinput.Model).Focus" [ tooltip="(*charm.land/bubbles/v2/textinput.Model).Focus | defined in textinput.go:268" fillcolor="moccasin" label="(*Model).Focus" penwidth="1.5" ]
+        
+    }
+
+        subgraph "cluster_charm.land/bubbles/v2/viewport" {
+        rank="sink";
+label="viewport";
+tooltip="package: charm.land/bubbles/v2/viewport";
+penwidth="0.8";
+fontsize="16";
+style="filled";
+fillcolor="lightyellow";
+fontname="Tahoma bold";
+URL="/?f=charm.land/bubbles/v2/viewport";
+        
+        "(*charm.land/bubbles/v2/viewport.Model).SetWidth" [ fillcolor="moccasin" label="(*Model).SetWidth" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/viewport.Model).SetWidth | defined in viewport.go:178" ]
+        "(*charm.land/bubbles/v2/viewport.Model).SetHeight" [ label="(*Model).SetHeight" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/viewport.Model).SetHeight | defined in viewport.go:168" fillcolor="moccasin" ]
+        "(*charm.land/bubbles/v2/viewport.Model).SetContent" [ fillcolor="moccasin" label="(*Model).SetContent" penwidth="1.5" tooltip="(*charm.land/bubbles/v2/viewport.Model).SetContent | defined in viewport.go:226" ]
+        "(*charm.land/bubbles/v2/viewport.Model).GotoBottom" [ tooltip="(*charm.land/bubbles/v2/viewport.Model).GotoBottom | defined in viewport.go:591" fillcolor="moccasin" label="(*Model).GotoBottom" penwidth="1.5" ]
+        "charm.land/bubbles/v2/viewport.New" [ fillcolor="moccasin" label="New" penwidth="1.5" tooltip="charm.land/bubbles/v2/viewport.New | defined in viewport.go:43" ]
+        "(charm.land/bubbles/v2/viewport.Model).View" [ label="(Model).View" penwidth="1.5" tooltip="(charm.land/bubbles/v2/viewport.Model).View | defined in viewport.go:728" fillcolor="moccasin" ]
+        
+    }
+
+        subgraph "cluster_charm.land/bubbletea/v2" {
+        penwidth="0.8";
+style="filled";
+fillcolor="lightyellow";
+fontname="Tahoma bold";
+tooltip="package: charm.land/bubbletea/v2";
+fontsize="16";
+rank="sink";
+label="tea";
+URL="/?f=charm.land/bubbletea/v2";
+        
+        "(charm.land/bubbletea/v2.KeyPressMsg).String" [ label="(KeyPressMsg).String" penwidth="1.5" tooltip="(charm.land/bubbletea/v2.KeyPressMsg).String | defined in key.go:195" fillcolor="moccasin" ]
+        "charm.land/bubbletea/v2.Batch" [ label="Batch" penwidth="1.5" tooltip="charm.land/bubbletea/v2.Batch | defined in commands.go:15" fillcolor="moccasin" ]
+        "(*charm.land/bubbletea/v2.Program).Send" [ fillcolor="moccasin" label="(*Program).Send" penwidth="1.5" tooltip="(*charm.land/bubbletea/v2.Program).Send | defined in tea.go:1183" ]
+        "charm.land/bubbletea/v2.NewProgram" [ fillcolor="moccasin" label="NewProgram" penwidth="1.5" tooltip="charm.land/bubbletea/v2.NewProgram | defined in tea.go:595" ]
+        "(*charm.land/bubbletea/v2.Program).Run" [ tooltip="(*charm.land/bubbletea/v2.Program).Run | defined in tea.go:991" fillcolor="moccasin" label="(*Program).Run" penwidth="1.5" ]
+        "charm.land/bubbletea/v2.NewView" [ fillcolor="moccasin" label="NewView" penwidth="1.5" tooltip="charm.land/bubbletea/v2.NewView | defined in tea.go:76" ]
+        
+    }
+
+        subgraph "cluster_charm.land/lipgloss/v2" {
+        penwidth="0.8";
+fontsize="16";
+fillcolor="lightyellow";
+rank="sink";
+label="lipgloss";
+URL="/?f=charm.land/lipgloss/v2";
+tooltip="package: charm.land/lipgloss/v2";
+style="filled";
+fontname="Tahoma bold";
+        
+        "charm.land/lipgloss/v2.Height" [ fillcolor="moccasin" label="Height" penwidth="1.5" tooltip="charm.land/lipgloss/v2.Height | defined in size.go:29" ]
+        "(charm.land/lipgloss/v2.Style).Render" [ fillcolor="moccasin" label="(Style).Render" penwidth="1.5" tooltip="(charm.land/lipgloss/v2.Style).Render | defined in style.go:268" ]
+        "charm.land/lipgloss/v2.NewStyle" [ penwidth="1.5" tooltip="charm.land/lipgloss/v2.NewStyle | defined in style.go:137" fillcolor="moccasin" label="NewStyle" ]
+        "charm.land/lipgloss/v2.Color" [ fillcolor="moccasin" label="Color" penwidth="1.5" tooltip="charm.land/lipgloss/v2.Color | defined in color.go:68" ]
+        "(charm.land/lipgloss/v2.Style).Foreground" [ fillcolor="moccasin" label="(Style).Foreground" penwidth="1.5" tooltip="(charm.land/lipgloss/v2.Style).Foreground | defined in set.go:272" ]
+        "(charm.land/lipgloss/v2.Style).GetFrameSize" [ tooltip="(charm.land/lipgloss/v2.Style).GetFrameSize | defined in get.go:464" fillcolor="moccasin" label="(Style).GetFrameSize" penwidth="1.5" ]
+        "charm.land/lipgloss/v2.JoinVertical" [ fillcolor="moccasin" label="JoinVertical" penwidth="1.5" tooltip="charm.land/lipgloss/v2.JoinVertical | defined in join.go:116" ]
+        "(charm.land/lipgloss/v2.Style).Margin" [ penwidth="1.5" tooltip="(charm.land/lipgloss/v2.Style).Margin | defined in set.go:415" fillcolor="moccasin" label="(Style).Margin" ]
+        
+    }
+
+        subgraph "cluster_context" {
+        penwidth="0.8";
+fontsize="16";
+fillcolor="#E0FFE1";
+rank="sink";
+label="context";
+tooltip="package: context";
+style="filled";
+fontname="Tahoma bold";
+URL="/?f=context";
+        
+        "context.Background" [ fillcolor="#adedad" label="Background" penwidth="1.5" tooltip="context.Background | defined in context.go:215" ]
+        "context.WithCancel" [ label="WithCancel" penwidth="1.5" tooltip="context.WithCancel | defined in context.go:240" fillcolor="#adedad" ]
+        
+    }
+
+        subgraph "cluster_encoding/json" {
+        style="filled";
+fillcolor="#E0FFE1";
+fontname="Tahoma bold";
+label="encoding/json";
+URL="/?f=encoding/json";
+tooltip="package: encoding/json";
+fontsize="16";
+rank="sink";
+penwidth="0.8";
+        
+        "encoding/json.NewDecoder" [ label="NewDecoder" penwidth="1.5" tooltip="encoding/json.NewDecoder | defined in stream.go:33" fillcolor="#adedad" ]
+        "(*encoding/json.Decoder).Decode" [ fillcolor="#adedad" label="(*Decoder).Decode" penwidth="1.5" tooltip="(*encoding/json.Decoder).Decode | defined in stream.go:51" ]
+        "encoding/json.Unmarshal" [ fillcolor="#adedad" label="Unmarshal" penwidth="1.5" tooltip="encoding/json.Unmarshal | defined in decode.go:102" ]
+        "encoding/json.MarshalIndent" [ fillcolor="#adedad" label="MarshalIndent" penwidth="1.5" tooltip="encoding/json.MarshalIndent | defined in encode.go:221" ]
+        "encoding/json.Marshal" [ fillcolor="#adedad" label="Marshal" penwidth="1.5" tooltip="encoding/json.Marshal | defined in encode.go:205" ]
+        
+    }
+
+        subgraph "cluster_errors" {
+        penwidth="0.8";
+fillcolor="#E0FFE1";
+fontname="Tahoma bold";
+rank="sink";
+URL="/?f=errors";
+tooltip="package: errors";
+fontsize="16";
+style="filled";
+label="errors";
+        
+        "errors.Is" [ fillcolor="#adedad" label="Is" penwidth="1.5" tooltip="errors.Is | defined in wrap.go:45" ]
+        "errors.New" [ tooltip="errors.New | defined in errors.go:64" fillcolor="#adedad" label="New" penwidth="1.5" ]
+        
+    }
+
+        subgraph "cluster_fmt" {
+        tooltip="package: fmt";
+penwidth="0.8";
+style="filled";
+fillcolor="#E0FFE1";
+rank="sink";
+label="fmt";
+URL="/?f=fmt";
+fontsize="16";
+fontname="Tahoma bold";
+        
+        "fmt.Println" [ label="Println" penwidth="1.5" tooltip="fmt.Println | defined in print.go:314" fillcolor="#adedad" ]
+        "fmt.Sprintf" [ fillcolor="#adedad" label="Sprintf" penwidth="1.5" tooltip="fmt.Sprintf | defined in print.go:237" ]
+        "fmt.Printf" [ fillcolor="#adedad" label="Printf" penwidth="1.5" tooltip="fmt.Printf | defined in print.go:232" ]
+        
+    }
+
+        subgraph "cluster_github.com/coder/websocket" {
+        URL="/?f=github.com/coder/websocket";
+penwidth="0.8";
+fontsize="16";
+style="filled";
+fillcolor="lightyellow";
+rank="sink";
+tooltip="package: github.com/coder/websocket";
+fontname="Tahoma bold";
+label="websocket";
+        
+        "github.com/coder/websocket.Dial" [ fillcolor="moccasin" label="Dial" penwidth="1.5" tooltip="github.com/coder/websocket.Dial | defined in dial.go:120" ]
+        "(*github.com/coder/websocket.Conn).CloseNow" [ fillcolor="moccasin" label="(*Conn).CloseNow" penwidth="1.5" tooltip="(*github.com/coder/websocket.Conn).CloseNow | defined in close.go:132" ]
+        "(*github.com/coder/websocket.Conn).Read" [ fillcolor="moccasin" label="(*Conn).Read" penwidth="1.5" tooltip="(*github.com/coder/websocket.Conn).Read | defined in read.go:41" ]
+        
+    }
+
+        subgraph "cluster_io" {
+        fontsize="16";
+fontname="Tahoma bold";
+rank="sink";
+URL="/?f=io";
+tooltip="package: io";
+style="filled";
+fillcolor="#E0FFE1";
+label="io";
+penwidth="0.8";
+        
+        "io.ReadAll" [ fillcolor="#adedad" label="ReadAll" penwidth="1.5" tooltip="io.ReadAll | defined in io.go:709" ]
+        
+    }
+
+        subgraph "cluster_net/http" {
+        fontsize="16";
+style="filled";
+URL="/?f=net/http";
+tooltip="package: net/http";
+penwidth="0.8";
+fillcolor="#E0FFE1";
+fontname="Tahoma bold";
+rank="sink";
+label="net/http";
+        
+        "net/http.PostForm" [ fillcolor="#adedad" label="PostForm" penwidth="1.5" tooltip="net/http.PostForm | defined in client.go:899" ]
+        "net/http.NewRequest" [ penwidth="1.5" tooltip="net/http.NewRequest | defined in request.go:862" fillcolor="#adedad" label="NewRequest" ]
+        "(net/http.Header).Set" [ fillcolor="#adedad" label="(Header).Set" penwidth="1.5" tooltip="(net/http.Header).Set | defined in header.go:39" ]
+        "(*net/http.Client).Do" [ fillcolor="#adedad" label="(*Client).Do" penwidth="1.5" tooltip="(*net/http.Client).Do | defined in client.go:591" ]
+        
+    }
+
+        subgraph "cluster_net/url" {
+        penwidth="0.8";
+fontsize="16";
+fillcolor="#E0FFE1";
+rank="sink";
+label="net/url";
+tooltip="package: net/url";
+style="filled";
+fontname="Tahoma bold";
+URL="/?f=net/url";
+        
+        "(*net/url.URL).Query" [ label="(*URL).Query" penwidth="1.5" tooltip="(*net/url.URL).Query | defined in url.go:1154" fillcolor="#adedad" ]
+        "(net/url.Values).Add" [ label="(Values).Add" penwidth="1.5" tooltip="(net/url.Values).Add | defined in url.go:906" fillcolor="#adedad" ]
+        "(net/url.Values).Encode" [ penwidth="1.5" tooltip="(net/url.Values).Encode | defined in url.go:994" fillcolor="#adedad" label="(Values).Encode" ]
+        
+    }
+
+        subgraph "cluster_os" {
+        penwidth="0.8";
+fontsize="16";
+style="filled";
+rank="sink";
+label="os";
+fillcolor="#E0FFE1";
+fontname="Tahoma bold";
+URL="/?f=os";
+tooltip="package: os";
+        
+        "os.ReadFile" [ fillcolor="#adedad" label="ReadFile" penwidth="1.5" tooltip="os.ReadFile | defined in file.go:864" ]
+        "os.WriteFile" [ tooltip="os.WriteFile | defined in file.go:932" fillcolor="#adedad" label="WriteFile" penwidth="1.5" ]
+        "os.Stat" [ fillcolor="#adedad" label="Stat" penwidth="1.5" tooltip="os.Stat | defined in stat.go:11" ]
+        "os.Exit" [ penwidth="1.5" tooltip="os.Exit | defined in proc.go:62" fillcolor="#adedad" label="Exit" ]
+        
+    }
+
+        subgraph "cluster_os/exec" {
+        URL="/?f=os/exec";
+penwidth="0.8";
+fontsize="16";
+fillcolor="#E0FFE1";
+rank="sink";
+tooltip="package: os/exec";
+style="filled";
+fontname="Tahoma bold";
+label="os/exec";
+        
+        "os/exec.Command" [ fillcolor="#adedad" label="Command" penwidth="1.5" tooltip="os/exec.Command | defined in exec.go:404" ]
+        "(*os/exec.Cmd).Start" [ tooltip="(*os/exec.Cmd).Start | defined in exec.go:641" fillcolor="#adedad" label="(*Cmd).Start" penwidth="1.5" ]
+        "(*os/exec.Cmd).CombinedOutput" [ fillcolor="#adedad" label="(*Cmd).CombinedOutput" penwidth="1.5" tooltip="(*os/exec.Cmd).CombinedOutput | defined in exec.go:1037" ]
+        
+    }
+
+        subgraph "cluster_strings" {
+        penwidth="0.8";
+style="filled";
+rank="sink";
+label="strings";
+tooltip="package: strings";
+fontsize="16";
+fillcolor="#E0FFE1";
+fontname="Tahoma bold";
+URL="/?f=strings";
+        
+        "strings.TrimSpace" [ label="TrimSpace" penwidth="1.5" tooltip="strings.TrimSpace | defined in strings.go:1091" fillcolor="#adedad" ]
+        "strings.Join" [ fillcolor="#adedad" label="Join" penwidth="1.5" tooltip="strings.Join | defined in strings.go:487" ]
+        "strings.Contains" [ label="Contains" penwidth="1.5" tooltip="strings.Contains | defined in strings.go:62" fillcolor="#adedad" ]
+        
+    }
+
+        subgraph "cluster_time" {
+        penwidth="0.8";
+style="filled";
+fontname="Tahoma bold";
+URL="/?f=time";
+tooltip="package: time";
+fontsize="16";
+fillcolor="#E0FFE1";
+rank="sink";
+label="time";
+        
+        "time.Sleep" [ fillcolor="#adedad" label="Sleep" penwidth="1.5" tooltip="time.Sleep | defined in sleep.go:14" ]
+        
+    }
+
+    }
+
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(*charm.land/bubbles/v2/viewport.Model).GotoBottom" [ color="saddlebrown" tooltip="at chatUi.go:93: calling [(*charm.land/bubbles/v2/viewport.Model).GotoBottom]" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "(*charm.land/bubbles/v2/list.Model).SetShowStatusBar" [ color="saddlebrown" tooltip="at ui.go:82: calling [(*charm.land/bubbles/v2/list.Model).SetShowStatusBar]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "fmt.Println" [ tooltip="at chat.go:112: calling [fmt.Println]\nat chat.go:118: calling [fmt.Println]\nat chat.go:129: calling [fmt.Println]\nat chat.go:137: calling [fmt.Println]\nat chat.go:142: calling [fmt.Println]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.getUserToken" -> "encoding/json.NewDecoder" [ color="saddlebrown" tooltip="at auth.go:57: calling [encoding/json.NewDecoder]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "charm.land/lipgloss/v2.JoinVertical" [ color="saddlebrown" tooltip="at chatUi.go:110: calling [charm.land/lipgloss/v2.JoinVertical]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "charm.land/lipgloss/v2.Height" [ color="saddlebrown" tooltip="at chatUi.go:68: calling [charm.land/lipgloss/v2.Height]\nat chatUi.go:69: calling [charm.land/lipgloss/v2.Height]\nat chatUi.go:70: calling [charm.land/lipgloss/v2.Height]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "github.com/NuuttiSir/tuiwatchers.InitialChatModel" [ tooltip="at main.go:115: calling [github.com/NuuttiSir/tuiwatchers.InitialChatModel]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" [ tooltip="at main.go:190: calling [github.com/NuuttiSir/tuiwatchers.startMPVWithStream]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "encoding/json.Marshal" [ color="saddlebrown" tooltip="at chat.go:110: calling [encoding/json.Marshal]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(charm.land/bubbles/v2/textinput.Model).View" [ color="saddlebrown" tooltip="at chatUi.go:70: calling [(charm.land/bubbles/v2/textinput.Model).View]" ]
+    "github.com/NuuttiSir/tuiwatchers.deviceToken" -> "net/http.PostForm" [ color="saddlebrown" tooltip="at auth.go:23: calling [net/http.PostForm]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "(*net/http.Client).Do" [ color="saddlebrown" tooltip="at chat.go:198: calling [(*net/http.Client).Do]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "(charm.land/bubbles/v2/list.Model).SelectedItem" [ color="saddlebrown" tooltip="at player.go:21: calling [(charm.land/bubbles/v2/list.Model).SelectedItem]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "bytes.NewBuffer" [ color="saddlebrown" tooltip="at chat.go:116: calling [bytes.NewBuffer]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "fmt.Sprintf" [ color="saddlebrown" tooltip="at ui.go:123: calling [fmt.Sprintf]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(charm.land/bubbles/v2/textinput.Model).Value" [ color="saddlebrown" tooltip="at chatUi.go:83: calling [(charm.land/bubbles/v2/textinput.Model).Value]" ]
+    "github.com/NuuttiSir/tuiwatchers.deviceToken" -> "(*encoding/json.Decoder).Decode" [ color="saddlebrown" tooltip="at auth.go:34: calling [(*encoding/json.Decoder).Decode]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(net/url.Values).Add" [ tooltip="at api.go:57: calling [(net/url.Values).Add]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.saveToken" -> "encoding/json.MarshalIndent" [ color="saddlebrown" tooltip="at storage.go:15: calling [encoding/json.MarshalIndent]" ]
+    "github.com/NuuttiSir/tuiwatchers.InitialChatModel" -> "charm.land/bubbles/v2/viewport.New" [ color="saddlebrown" tooltip="at chatUi.go:46: calling [charm.land/bubbles/v2/viewport.New]" ]
+    "github.com/NuuttiSir/tuiwatchers.initialModel" -> "(charm.land/lipgloss/v2.Style).Foreground" [ color="saddlebrown" tooltip="at ui.go:91: calling [(charm.land/lipgloss/v2.Style).Foreground]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(charm.land/bubbles/v2/spinner.Model).Update" [ color="saddlebrown" tooltip="at ui.go:107: calling [(charm.land/bubbles/v2/spinner.Model).Update]" ]
+    "github.com/NuuttiSir/tuiwatchers.init" -> "charm.land/lipgloss/v2.NewStyle" [ color="saddlebrown" tooltip="at ui.go:23: calling [charm.land/lipgloss/v2.NewStyle]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "io.ReadAll" [ color="saddlebrown" tooltip="at api.go:72: calling [io.ReadAll]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "io.ReadAll" [ color="saddlebrown" tooltip="at api.go:104: calling [io.ReadAll]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "os.Exit" [ color="saddlebrown" tooltip="at main.go:169: calling [os.Exit]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "github.com/NuuttiSir/tuiwatchers.sendChatCommand" [ tooltip="at chatUi.go:88: calling [github.com/NuuttiSir/tuiwatchers.sendChatCommand]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "charm.land/bubbletea/v2.NewView" [ color="saddlebrown" tooltip="at chatUi.go:117: calling [charm.land/bubbletea/v2.NewView]" ]
+    "github.com/NuuttiSir/tuiwatchers.spawnChatWindow" -> "fmt.Println" [ color="saddlebrown" tooltip="at chat.go:278: calling [fmt.Println]\nat chat.go:283: calling [fmt.Println]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(charm.land/bubbles/v2/list.Model).Update" [ color="saddlebrown" tooltip="at ui.go:209: calling [(charm.land/bubbles/v2/list.Model).Update]" ]
+    "github.com/NuuttiSir/tuiwatchers.getUserToken" -> "net/http.PostForm" [ color="saddlebrown" tooltip="at auth.go:45: calling [net/http.PostForm]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "fmt.Println" [ color="saddlebrown" tooltip="at chat.go:183: calling [fmt.Println]\nat chat.go:189: calling [fmt.Println]\nat chat.go:200: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "fmt.Println" [ color="saddlebrown" tooltip="at chat.go:210: calling [fmt.Println]\nat chat.go:222: calling [fmt.Println]\nat chat.go:230: calling [fmt.Println]\nat chat.go:241: calling [fmt.Println]\nat chat.go:272: calling [fmt.Println]\nat chat.go:258: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.initialModel" -> "charm.land/bubbles/v2/spinner.New" [ color="saddlebrown" tooltip="at ui.go:89: calling [charm.land/bubbles/v2/spinner.New]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "fmt.Printf" [ color="saddlebrown" tooltip="at main.go:168: calling [fmt.Printf]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "encoding/json.Marshal" [ color="saddlebrown" tooltip="at chat.go:181: calling [encoding/json.Marshal]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "bytes.NewBuffer" [ color="saddlebrown" tooltip="at chat.go:187: calling [bytes.NewBuffer]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "net/http.NewRequest" [ color="saddlebrown" tooltip="at chat.go:187: calling [net/http.NewRequest]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "strings.Join" [ color="saddlebrown" tooltip="at chatUi.go:92: calling [strings.Join]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat$1" -> "(*charm.land/bubbletea/v2.Program).Send" [ color="saddlebrown" tooltip="at main.go:144: calling [(*charm.land/bubbletea/v2.Program).Send]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.newChannelList" [ tooltip="at ui.go:111: calling [github.com/NuuttiSir/tuiwatchers.newChannelList]\nat ui.go:177: calling [github.com/NuuttiSir/tuiwatchers.newChannelList]" ]
+    "github.com/NuuttiSir/tuiwatchers.getUserToken" -> "time.Sleep" [ color="saddlebrown" tooltip="at auth.go:43: calling [time.Sleep]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(*net/http.Client).Do" [ color="saddlebrown" tooltip="at api.go:64: calling [(*net/http.Client).Do]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.saveToken" [ tooltip="at ui.go:139: calling [github.com/NuuttiSir/tuiwatchers.saveToken]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" [ tooltip="at ui.go:150: calling [github.com/NuuttiSir/tuiwatchers.getFollowedChannels]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(charm.land/bubbles/v2/textinput.Model).Update" [ color="saddlebrown" tooltip="at chatUi.go:104: calling [(charm.land/bubbles/v2/textinput.Model).Update]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "net/http.NewRequest" [ color="saddlebrown" tooltip="at api.go:50: calling [net/http.NewRequest]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "context.WithCancel" [ color="saddlebrown" tooltip="at main.go:121: calling [context.WithCancel]" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "(*github.com/coder/websocket.Conn).Read" [ color="saddlebrown" tooltip="at chat.go:220: calling [(*github.com/coder/websocket.Conn).Read]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).View" -> "charm.land/bubbletea/v2.NewView" [ color="saddlebrown" tooltip="at ui.go:231: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:226: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:247: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:237: calling [charm.land/bubbletea/v2.NewView]\nat ui.go:242: calling [charm.land/bubbletea/v2.NewView]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "fmt.Println" [ color="saddlebrown" tooltip="at player.go:31: calling [fmt.Println]\nat player.go:32: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.validateToken" -> "net/http.NewRequest" [ tooltip="at auth.go:69: calling [net/http.NewRequest]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "charm.land/bubbles/v2/list.New" [ tooltip="at ui.go:79: calling [charm.land/bubbles/v2/list.New]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "(*charm.land/bubbles/v2/list.Model).DisableQuitKeybindings" [ color="saddlebrown" tooltip="at ui.go:84: calling [(*charm.land/bubbles/v2/list.Model).DisableQuitKeybindings]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "errors.New" [ color="saddlebrown" tooltip="at ui.go:135: calling [errors.New]\nat ui.go:153: calling [errors.New]\nat ui.go:172: calling [errors.New]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(charm.land/bubbletea/v2.KeyPressMsg).String" [ tooltip="at ui.go:191: calling [(charm.land/bubbletea/v2.KeyPressMsg).String]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(net/url.Values).Encode" [ color="saddlebrown" tooltip="at api.go:58: calling [(net/url.Values).Encode]" ]
+    "github.com/NuuttiSir/tuiwatchers.postSubscribe" -> "(net/http.Header).Set" [ tooltip="at chat.go:193: calling [(net/http.Header).Set]\nat chat.go:194: calling [(net/http.Header).Set]\nat chat.go:195: calling [(net/http.Header).Set]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "encoding/json.Unmarshal" [ color="saddlebrown" tooltip="at chat.go:228: calling [encoding/json.Unmarshal]" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "(*charm.land/bubbles/v2/list.DefaultDelegate).SetSpacing" [ tooltip="at ui.go:77: calling [(*charm.land/bubbles/v2/list.DefaultDelegate).SetSpacing]" color="saddlebrown" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.authPollCommand" [ tooltip="at ui.go:124: calling [github.com/NuuttiSir/tuiwatchers.authPollCommand]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.tokenLoad" [ tooltip="at ui.go:144: calling [github.com/NuuttiSir/tuiwatchers.tokenLoad]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "charm.land/bubbletea/v2.Batch" [ color="saddlebrown" tooltip="at chatUi.go:88: calling [charm.land/bubbletea/v2.Batch]" ]
+    "github.com/NuuttiSir/tuiwatchers.tokenLoad" -> "os.ReadFile" [ color="saddlebrown" tooltip="at storage.go:23: calling [os.ReadFile]" ]
+    "github.com/NuuttiSir/tuiwatchers.InitialChatModel" -> "(*charm.land/bubbles/v2/textinput.Model).SetVirtualCursor" [ tooltip="at chatUi.go:40: calling [(*charm.land/bubbles/v2/textinput.Model).SetVirtualCursor]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.tokenLoad" -> "encoding/json.Unmarshal" [ color="saddlebrown" tooltip="at storage.go:28: calling [encoding/json.Unmarshal]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(*charm.land/bubbles/v2/viewport.Model).SetHeight" [ color="saddlebrown" tooltip="at chatUi.go:74: calling [(*charm.land/bubbles/v2/viewport.Model).SetHeight]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "(*net/http.Client).Do" [ tooltip="at api.go:96: calling [(*net/http.Client).Do]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.validateToken" -> "fmt.Println" [ color="saddlebrown" tooltip="at auth.go:71: calling [fmt.Println]\nat auth.go:79: calling [fmt.Println]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChannelInfo).Description" -> "fmt.Sprintf" [ color="saddlebrown" tooltip="at ui.go:67: calling [fmt.Sprintf]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "github.com/NuuttiSir/tuiwatchers.openChat" [ tooltip="at main.go:159: calling [github.com/NuuttiSir/tuiwatchers.openChat]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "strings.TrimSpace" [ color="saddlebrown" tooltip="at chatUi.go:83: calling [strings.TrimSpace]" ]
+    "github.com/NuuttiSir/tuiwatchers.deviceToken" -> "fmt.Println" [ color="saddlebrown" tooltip="at auth.go:28: calling [fmt.Println]\nat auth.go:35: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "charm.land/bubbletea/v2.NewProgram" [ color="saddlebrown" tooltip="at main.go:116: calling [charm.land/bubbletea/v2.NewProgram]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).View" -> "fmt.Sprintf" [ tooltip="at ui.go:225: calling [fmt.Sprintf]\nat ui.go:236: calling [fmt.Sprintf]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "(*charm.land/bubbles/v2/list.Model).SetFilteringEnabled" [ color="saddlebrown" tooltip="at ui.go:81: calling [(*charm.land/bubbles/v2/list.Model).SetFilteringEnabled]" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "(*charm.land/bubbles/v2/list.Model).SetShowHelp" [ tooltip="at ui.go:83: calling [(*charm.land/bubbles/v2/list.Model).SetShowHelp]" color="saddlebrown" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(charm.land/bubbletea/v2.KeyPressMsg).String" [ color="saddlebrown" tooltip="at chatUi.go:79: calling [(charm.land/bubbletea/v2.KeyPressMsg).String]" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "github.com/NuuttiSir/tuiwatchers.postSubscribe" [ tooltip="at chat.go:247: calling [github.com/NuuttiSir/tuiwatchers.postSubscribe]" ]
+    "github.com/NuuttiSir/tuiwatchers.checkTokenFile" -> "fmt.Println" [ color="saddlebrown" tooltip="at storage.go:36: calling [fmt.Println]\nat storage.go:38: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "github.com/NuuttiSir/tuiwatchers.spawnChatWindow" [ tooltip="at main.go:189: calling [github.com/NuuttiSir/tuiwatchers.spawnChatWindow]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "strings.Contains" [ color="saddlebrown" tooltip="at player.go:30: calling [strings.Contains]" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "(*github.com/coder/websocket.Conn).CloseNow" [ arrowhead="normalnoneodiamond" color="saddlebrown" tooltip="at chat.go:213: calling [(*github.com/coder/websocket.Conn).CloseNow]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "github.com/NuuttiSir/tuiwatchers.openChat$1" [ arrowhead="normalnoneodot" tooltip="at main.go:142: calling [github.com/NuuttiSir/tuiwatchers.openChat$1]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Init" -> "charm.land/bubbletea/v2.Batch" [ tooltip="at ui.go:100: calling [charm.land/bubbletea/v2.Batch]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.initialModel" -> "charm.land/lipgloss/v2.NewStyle" [ color="saddlebrown" tooltip="at ui.go:91: calling [charm.land/lipgloss/v2.NewStyle]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "os.Exit" [ color="saddlebrown" tooltip="at player.go:35: calling [os.Exit]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(charm.land/lipgloss/v2.Style).GetFrameSize" [ color="saddlebrown" tooltip="at ui.go:114: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]\nat ui.go:180: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]\nat ui.go:187: calling [(charm.land/lipgloss/v2.Style).GetFrameSize]" ]
+    "github.com/NuuttiSir/tuiwatchers.init" -> "(charm.land/lipgloss/v2.Style).Margin" [ color="saddlebrown" tooltip="at ui.go:23: calling [(charm.land/lipgloss/v2.Style).Margin]" ]
+    "github.com/NuuttiSir/tuiwatchers.spawnChatWindow" -> "os/exec.Command" [ tooltip="at chat.go:280: calling [os/exec.Command]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "(*os/exec.Cmd).CombinedOutput" [ color="saddlebrown" tooltip="at player.go:28: calling [(*os/exec.Cmd).CombinedOutput]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "(net/http.Header).Set" [ color="saddlebrown" tooltip="at chat.go:122: calling [(net/http.Header).Set]\nat chat.go:123: calling [(net/http.Header).Set]\nat chat.go:124: calling [(net/http.Header).Set]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "(*net/http.Client).Do" [ color="saddlebrown" tooltip="at chat.go:127: calling [(*net/http.Client).Do]" ]
+    "github.com/NuuttiSir/tuiwatchers.InitialChatModel" -> "charm.land/bubbles/v2/textinput.New" [ color="saddlebrown" tooltip="at chatUi.go:38: calling [charm.land/bubbles/v2/textinput.New]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "context.Background" [ color="saddlebrown" tooltip="at main.go:121: calling [context.Background]" ]
+    "github.com/NuuttiSir/tuiwatchers.spawnChatWindow" -> "(*os/exec.Cmd).Start" [ color="saddlebrown" tooltip="at chat.go:281: calling [(*os/exec.Cmd).Start]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(*charm.land/bubbles/v2/viewport.Model).SetWidth" [ color="saddlebrown" tooltip="at chatUi.go:73: calling [(*charm.land/bubbles/v2/viewport.Model).SetWidth]" ]
+    "github.com/NuuttiSir/tuiwatchers.InitialChatModel" -> "(*charm.land/bubbles/v2/textinput.Model).SetWidth" [ tooltip="at chatUi.go:44: calling [(*charm.land/bubbles/v2/textinput.Model).SetWidth]" color="saddlebrown" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).View" -> "(charm.land/bubbles/v2/spinner.Model).View" [ color="saddlebrown" tooltip="at ui.go:225: calling [(charm.land/bubbles/v2/spinner.Model).View]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "net/http.NewRequest" [ color="saddlebrown" tooltip="at api.go:86: calling [net/http.NewRequest]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Init" -> "github.com/NuuttiSir/tuiwatchers.authStartCommand" [ tooltip="at ui.go:100: calling [github.com/NuuttiSir/tuiwatchers.authStartCommand]" ]
+    "github.com/NuuttiSir/tuiwatchers.checkTokenFile" -> "os.Stat" [ color="saddlebrown" tooltip="at storage.go:35: calling [os.Stat]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Init" -> "charm.land/bubbletea/v2.Batch" [ color="saddlebrown" tooltip="at chatUi.go:59: calling [charm.land/bubbletea/v2.Batch]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "charm.land/bubbletea/v2.NewProgram" [ color="saddlebrown" tooltip="at main.go:165: calling [charm.land/bubbletea/v2.NewProgram]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(net/http.Header).Set" [ color="saddlebrown" tooltip="at api.go:60: calling [(net/http.Header).Set]\nat api.go:61: calling [(net/http.Header).Set]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "(*charm.land/bubbletea/v2.Program).Run" [ color="saddlebrown" tooltip="at main.go:148: calling [(*charm.land/bubbletea/v2.Program).Run]" ]
+    "github.com/NuuttiSir/tuiwatchers.validateToken" -> "(*net/http.Client).Do" [ color="saddlebrown" tooltip="at auth.go:77: calling [(*net/http.Client).Do]" ]
+    "github.com/NuuttiSir/tuiwatchers.newChannelList" -> "charm.land/bubbles/v2/list.NewDefaultDelegate" [ color="saddlebrown" tooltip="at ui.go:76: calling [charm.land/bubbles/v2/list.NewDefaultDelegate]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "fmt.Printf" [ color="saddlebrown" tooltip="at player.go:26: calling [fmt.Printf]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" [ tooltip="at ui.go:132: calling [github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser]" ]
+    "github.com/NuuttiSir/tuiwatchers.getUserToken" -> "(*encoding/json.Decoder).Decode" [ color="saddlebrown" tooltip="at auth.go:57: calling [(*encoding/json.Decoder).Decode]" ]
+    "github.com/NuuttiSir/tuiwatchers.connectAndListen" -> "github.com/coder/websocket.Dial" [ tooltip="at chat.go:208: calling [github.com/coder/websocket.Dial]" color="saddlebrown" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView" [ tooltip="at chatUi.go:68: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView" [ tooltip="at chatUi.go:69: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(*charm.land/bubbles/v2/textinput.Model).SetWidth" [ color="saddlebrown" tooltip="at chatUi.go:72: calling [(*charm.land/bubbles/v2/textinput.Model).SetWidth]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(*net/url.URL).Query" [ color="saddlebrown" tooltip="at api.go:56: calling [(*net/url.URL).Query]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).View" -> "(charm.land/lipgloss/v2.Style).Render" [ color="saddlebrown" tooltip="at ui.go:231: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:226: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:247: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:237: calling [(charm.land/lipgloss/v2.Style).Render]\nat ui.go:242: calling [(charm.land/lipgloss/v2.Style).Render]" ]
+    "github.com/NuuttiSir/tuiwatchers.getUserToken" -> "fmt.Println" [ color="saddlebrown" tooltip="at auth.go:51: calling [fmt.Println]\nat auth.go:58: calling [fmt.Println]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView" [ tooltip="at chatUi.go:112: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).headerView]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "encoding/json.NewDecoder" [ color="saddlebrown" tooltip="at api.go:78: calling [encoding/json.NewDecoder]" ]
+    "github.com/NuuttiSir/tuiwatchers.InitialChatModel" -> "(*charm.land/bubbles/v2/textinput.Model).Focus" [ color="saddlebrown" tooltip="at chatUi.go:41: calling [(*charm.land/bubbles/v2/textinput.Model).Focus]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "net/http.NewRequest" [ color="saddlebrown" tooltip="at chat.go:116: calling [net/http.NewRequest]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "(charm.land/bubbles/v2/viewport.Model).View" [ color="saddlebrown" tooltip="at chatUi.go:113: calling [(charm.land/bubbles/v2/viewport.Model).View]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView" [ tooltip="at chatUi.go:115: calling [(github.com/NuuttiSir/tuiwatchers.ChatModel).footerView]" ]
+    "github.com/NuuttiSir/tuiwatchers.deviceToken" -> "encoding/json.NewDecoder" [ color="saddlebrown" tooltip="at auth.go:34: calling [encoding/json.NewDecoder]" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "(*encoding/json.Decoder).Decode" [ color="saddlebrown" tooltip="at api.go:78: calling [(*encoding/json.Decoder).Decode]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).View" -> "(charm.land/bubbles/v2/list.Model).View" [ color="saddlebrown" tooltip="at ui.go:230: calling [(charm.land/bubbles/v2/list.Model).View]" ]
+    "github.com/NuuttiSir/tuiwatchers.saveToken" -> "os.WriteFile" [ tooltip="at storage.go:19: calling [os.WriteFile]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "encoding/json.NewDecoder" [ color="saddlebrown" tooltip="at api.go:110: calling [encoding/json.NewDecoder]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).View" -> "(charm.land/bubbles/v2/textinput.Model).View" [ color="saddlebrown" tooltip="at chatUi.go:114: calling [(charm.land/bubbles/v2/textinput.Model).View]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "fmt.Println" [ color="saddlebrown" tooltip="at api.go:88: calling [fmt.Println]\nat api.go:98: calling [fmt.Println]\nat api.go:105: calling [fmt.Println]\nat api.go:111: calling [fmt.Println]\nat api.go:115: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.validateToken" -> "(net/http.Header).Set" [ color="saddlebrown" tooltip="at auth.go:74: calling [(net/http.Header).Set]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "fmt.Println" [ color="saddlebrown" tooltip="at main.go:112: calling [fmt.Println]\nat main.go:113: calling [fmt.Println]\nat main.go:150: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "(net/http.Header).Set" [ color="saddlebrown" tooltip="at api.go:92: calling [(net/http.Header).Set]\nat api.go:93: calling [(net/http.Header).Set]" ]
+    "github.com/NuuttiSir/tuiwatchers.checkTokenFile" -> "github.com/NuuttiSir/tuiwatchers.saveToken" [ tooltip="at storage.go:37: calling [github.com/NuuttiSir/tuiwatchers.saveToken]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "encoding/json.Unmarshal" [ color="saddlebrown" tooltip="at chat.go:140: calling [encoding/json.Unmarshal]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(*charm.land/bubbles/v2/list.Model).SetSize" [ color="saddlebrown" tooltip="at ui.go:115: calling [(*charm.land/bubbles/v2/list.Model).SetSize]\nat ui.go:181: calling [(*charm.land/bubbles/v2/list.Model).SetSize]\nat ui.go:188: calling [(*charm.land/bubbles/v2/list.Model).SetSize]" ]
+    "(github.com/NuuttiSir/tuiwatchers.Model).Update" -> "(charm.land/bubbles/v2/list.Model).SelectedItem" [ color="saddlebrown" tooltip="at ui.go:199: calling [(charm.land/bubbles/v2/list.Model).SelectedItem]" ]
+    "(github.com/NuuttiSir/tuiwatchers.ChatModel).Update" -> "(*charm.land/bubbles/v2/viewport.Model).SetContent" [ tooltip="at chatUi.go:92: calling [(*charm.land/bubbles/v2/viewport.Model).SetContent]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.getFollowedChannels" -> "fmt.Println" [ color="saddlebrown" tooltip="at api.go:52: calling [fmt.Println]\nat api.go:66: calling [fmt.Println]\nat api.go:73: calling [fmt.Println]\nat api.go:79: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.openChat" -> "github.com/NuuttiSir/tuiwatchers.connectAndListen" [ arrowhead="normalnoneodot" tooltip="at main.go:140: calling [github.com/NuuttiSir/tuiwatchers.connectAndListen]" ]
+    "github.com/NuuttiSir/tuiwatchers.getAuthenticatedUser" -> "(*encoding/json.Decoder).Decode" [ tooltip="at api.go:110: calling [(*encoding/json.Decoder).Decode]" color="saddlebrown" ]
+    "github.com/NuuttiSir/tuiwatchers.initialModel" -> "charm.land/lipgloss/v2.Color" [ color="saddlebrown" tooltip="at ui.go:91: calling [charm.land/lipgloss/v2.Color]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "github.com/NuuttiSir/tuiwatchers.initialModel" [ tooltip="at main.go:164: calling [github.com/NuuttiSir/tuiwatchers.initialModel]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "(*charm.land/bubbletea/v2.Program).Run" [ color="saddlebrown" tooltip="at main.go:166: calling [(*charm.land/bubbletea/v2.Program).Run]" ]
+    "github.com/NuuttiSir/tuiwatchers.main" -> "fmt.Println" [ color="saddlebrown" tooltip="at main.go:174: calling [fmt.Println]\nat main.go:179: calling [fmt.Println]\nat main.go:185: calling [fmt.Println]" ]
+    "github.com/NuuttiSir/tuiwatchers.checkTokenFile" -> "errors.Is" [ color="saddlebrown" tooltip="at storage.go:35: calling [errors.Is]" ]
+    "github.com/NuuttiSir/tuiwatchers.startMPVWithStream" -> "os/exec.Command" [ color="saddlebrown" tooltip="at player.go:25: calling [os/exec.Command]" ]
+    "github.com/NuuttiSir/tuiwatchers.sendChatMessage" -> "io.ReadAll" [ color="saddlebrown" tooltip="at chat.go:135: calling [io.ReadAll]" ]
+}
