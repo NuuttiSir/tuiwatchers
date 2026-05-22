@@ -82,7 +82,6 @@ func validateToken(accessTokenParam string) bool {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		//TODO: Try using refresh token to get new acces token
 		return false
 	}
 

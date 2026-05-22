@@ -122,10 +122,16 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return am, tea.Quit
 		}
 
-		return initialStreamsModel(channels, ids, tokenFile, am.WindowWidth, am.WindowHeight) , tea.ClearScreen
+		return initialStreamsModel(channels, ids, tokenFile, am.WindowWidth, am.WindowHeight), tea.ClearScreen
 	case tea.WindowSizeMsg:
 		am.WindowWidth = msg.Width
 		am.WindowHeight = msg.Height
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			am.State = pageQuitting
+			return am, tea.Quit
+		}
 	}
 	return am, nil
 }

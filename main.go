@@ -1,3 +1,4 @@
+// NOTE: Cant use refreshtokens because they need client secret and cant give that publicly
 package main
 
 import (
