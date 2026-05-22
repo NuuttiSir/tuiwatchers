@@ -17,8 +17,8 @@ import (
 // on ad break
 func startMPVWithStream(channel tea.Model) error {
 	var selectedChannelGame string
-	selectedChannel := channel.(Model).SelectedChannel
-	if item, ok := channel.(Model).ChannelList.SelectedItem().(ChannelInfo); ok {
+	selectedChannel := channel.(StreamsModel).SelectedChannel
+	if item, ok := channel.(StreamsModel).ChannelList.SelectedItem().(ChannelInfo); ok {
 		selectedChannelGame = item.GameName
 	}
 

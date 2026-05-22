@@ -113,7 +113,7 @@ func main() {
 		}
 	}
 
-	model := initialModel()
+	model := initialAuthModel()
 	program := tea.NewProgram(model)
 	selectedChannel, err := program.Run()
 	if err != nil {
@@ -121,7 +121,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	finalModel, ok := selectedChannel.(Model)
+	finalModel, ok := selectedChannel.(StreamsModel)
 	if !ok {
 		fmt.Println("Could not cast model")
 		return
