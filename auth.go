@@ -82,7 +82,7 @@ func validateToken(accessTokenParam string) bool {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// fmt.Println("token invalid or expired", resp.StatusCode)
+		//TODO: Try using refresh token to get new acces token
 		return false
 	}
 

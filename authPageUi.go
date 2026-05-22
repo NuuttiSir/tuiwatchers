@@ -85,7 +85,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return am, tea.Quit
 		}
 
-		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
+		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID, msg.UserToken.RefreshToken); err != nil {
 			am.State = pageQuitting
 			am.Err = err
 			return am, tea.Quit

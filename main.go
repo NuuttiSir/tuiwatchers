@@ -66,10 +66,9 @@ type FollowDataList struct {
 }
 
 type TokenFile struct {
-	ClientId     string
 	AccessToken  string `json:"access_token"`
-	UserID       string `json:"user_id"`
 	RefreshToken string `json:"refresh_token"`
+	UserID       string `json:"user_id"`
 }
 
 func openChat() {

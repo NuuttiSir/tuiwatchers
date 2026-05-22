@@ -7,10 +7,11 @@ import (
 	"os"
 )
 
-func saveToken(path, token, userID string) error {
+func saveToken(path, accessToken, userID, refreshToken string) error {
 	file := TokenFile{
-		AccessToken: token,
-		UserID:      userID,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		UserID:       userID,
 	}
 	bytesWrite, err := json.MarshalIndent(file, "", " ")
 	if err != nil {
@@ -34,7 +35,7 @@ func tokenLoad(path string) (TokenFile, error) {
 func checkTokenFile(tokenFilePath string) error {
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
 		fmt.Println("tokens.json not found... Creating")
-		if err := saveToken(tokenFilePath, "", ""); err != nil {
+		if err := saveToken(tokenFilePath, "", "", ""); err != nil {
 			fmt.Println("err creating token file:", err)
 		}
 	}
