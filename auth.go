@@ -148,3 +148,9 @@ func authPollCommand(deviceCode DeviceCodeResponse) tea.Cmd {
 
 	}
 }
+
+func authSuccessDelayCommand() tea.Cmd {
+	return tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+		return AuthDelayCompleteMessage{}
+	})
+}

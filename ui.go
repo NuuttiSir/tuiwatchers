@@ -7,7 +7,9 @@ import (
 type page int
 
 const (
-	pageAuthentication = iota
+	pageDependencyCheck = iota
+	pageAuthentication
+	pageAuthSuccess
 	pageStreams
 	pageQuitting
 )

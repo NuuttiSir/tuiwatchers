@@ -17,6 +17,7 @@ type AuthModel struct {
 	AuthStatus   string
 	TokenFile    TokenFile
 	DeviceCode   DeviceCodeResponse
+	PendingAuth  AuthSuccessMessage
 	Err          error
 }
 
@@ -38,6 +39,8 @@ type AuthUserTokenMessage struct {
 	UserToken AccessToken
 	Err       error
 }
+
+type AuthDelayCompleteMessage struct{}
 
 func initialAuthModel() AuthModel {
 	Spinner := spinner.New()
@@ -61,15 +64,17 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		am.Spinner, cmd = am.Spinner.Update(msg)
 		return am, cmd
 	case AuthSuccessMessage:
-		am.State = pageStreams
-		return initialStreamsModel(msg.ChannelList, msg.BroadcasterIDs, msg.TokenFile, am.WindowWidth, am.WindowHeight), tea.ClearScreen
+		am.State = pageAuthSuccess
+		am.PendingAuth = msg
+		am.AuthStatus = "Successfull authentication"
+		return am, authSuccessDelayCommand()
 	case AuthErrorMessage:
 		am.State = pageQuitting
 		am.Err = msg.Err
 		return am, tea.Quit
 	case AuthDeviceCodeMessage:
 		am.DeviceCode = msg.DeviceCode
-		am.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
+		am.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate\n", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
 		return am, authPollCommand(msg.DeviceCode)
 	case AuthUserTokenMessage:
 		if msg.Err != nil && msg.UserToken.AccessToken == " " {
@@ -85,7 +90,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return am, tea.Quit
 		}
 
-		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID, msg.UserToken.RefreshToken); err != nil {
+		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
 			am.State = pageQuitting
 			am.Err = err
 			return am, tea.Quit
@@ -122,7 +127,21 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return am, tea.Quit
 		}
 
-		return initialStreamsModel(channels, ids, tokenFile, am.WindowWidth, am.WindowHeight), tea.ClearScreen
+		return am, func() tea.Msg {
+			return AuthSuccessMessage{
+				ChannelList:    channels,
+				BroadcasterIDs: ids,
+				TokenFile:      tokenFile,
+			}
+		}
+	case AuthDelayCompleteMessage:
+		return initialStreamsModel(
+			am.PendingAuth.ChannelList,
+			am.PendingAuth.BroadcasterIDs,
+			am.PendingAuth.TokenFile,
+			am.WindowWidth,
+			am.WindowHeight,
+		), tea.ClearScreen
 	case tea.WindowSizeMsg:
 		am.WindowWidth = msg.Width
 		am.WindowHeight = msg.Height
@@ -142,15 +161,17 @@ func (am AuthModel) View() tea.View {
 	case pageAuthentication:
 		status := "Authenticating..."
 		if am.AuthStatus != "" {
-			status = am.AuthStatus
+			status = fmt.Sprintf("%s\n%s %s", status, am.Spinner.View(), am.AuthStatus)
 		}
 		str := fmt.Sprintf("%s %s", am.Spinner.View(), status)
 		v := tea.NewView(docStyle.Render(str))
 		v.AltScreen = true
 		return v
-	case pageStreams:
-		// Go to streamsPage.go
-		return tea.View{}
+	case pageAuthSuccess:
+		str := fmt.Sprintf("%s\n", am.AuthStatus)
+		v := tea.NewView(docStyle.Render(str))
+		v.AltScreen = true
+		return v
 	case pageQuitting:
 		if am.Err != nil {
 			str = fmt.Sprintf("Error: %v\n", am.Err)
