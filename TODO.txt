@@ -2,3 +2,6 @@ Add dependency check before auth
 Add Windows support
 Add emotes support
 Add channel switching without restarting application
+Add anonymous watching
+Add search for channels that are not followed
+Make mpvStart func to call openChat func
