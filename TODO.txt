@@ -1,4 +1,4 @@
-Add refreeshTOkens to auth
 Add dependency check before auth
-add Windows support
-Make clearer
+Add Windows support
+Add emotes support
+Add channel switching without restarting application
