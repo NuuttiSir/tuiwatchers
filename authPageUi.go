@@ -64,9 +64,9 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		am.Spinner, cmd = am.Spinner.Update(msg)
 		return am, cmd
 	case AuthSuccessMessage:
-		am.State = pageAuthSuccess
 		am.PendingAuth = msg
 		am.AuthStatus = "Successfull authentication"
+		// TODO: Remove delay FUNC call
 		return am, authSuccessDelayCommand()
 	case AuthErrorMessage:
 		am.State = pageQuitting
@@ -164,11 +164,6 @@ func (am AuthModel) View() tea.View {
 			status = fmt.Sprintf("%s\n%s %s", status, am.Spinner.View(), am.AuthStatus)
 		}
 		str := fmt.Sprintf("%s %s", am.Spinner.View(), status)
-		v := tea.NewView(docStyle.Render(str))
-		v.AltScreen = true
-		return v
-	case pageAuthSuccess:
-		str := fmt.Sprintf("%s\n", am.AuthStatus)
 		v := tea.NewView(docStyle.Render(str))
 		v.AltScreen = true
 		return v
