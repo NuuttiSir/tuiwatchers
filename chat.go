@@ -274,13 +274,14 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 	}
 }
 
-func spawnChatWindow(broadcasterID, userID, accessToken string) {
-	fmt.Println("In chat func")
-
+func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
 	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat "+clientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
+
 	err := cmd.Start()
 	if err != nil {
 		fmt.Println("Terminal window opening error", err)
-		return
+		return nil, err
 	}
+
+	return cmd, err
 }

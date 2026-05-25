@@ -138,7 +138,4 @@ func main() {
 		fmt.Println("Could not find broadcaster ID for selected channel")
 		return
 	}
-
-	spawnChatWindow(broadcasterID, finalModel.TokenFile.UserID, finalModel.TokenFile.AccessToken)
-	startMPVWithStream(selectedChannel)
 }
