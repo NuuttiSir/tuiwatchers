@@ -1,12 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
-	"strings"
-
-	tea "charm.land/bubbletea/v2"
 )
 
 // TODO: MAKE STREAM WINDOW START ON THE LEFT SIDE OF THE MONITOR
@@ -15,25 +11,12 @@ import (
 
 // TODO: For memes start a soap carving video or subway surfers when stream is
 // on ad break
-func startMPVWithStream(channel tea.Model) error {
-	var selectedChannelGame string
-	selectedChannel := channel.(StreamsModel).SelectedChannel
-	if item, ok := channel.(StreamsModel).ChannelList.SelectedItem().(ChannelInfo); ok {
-		selectedChannelGame = item.GameName
-	}
-
-	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+selectedChannel)
-	fmt.Printf("Starting mpv instance watching channel %s who is streaming %s", selectedChannel, selectedChannelGame)
-
-	output, err := mpvInstance.CombinedOutput()
+func startMPVWithStream(channelName string) (*exec.Cmd, error) {
+	mpvInstance := exec.Command("/usr/bin/mpv", "https://twitch.tv/"+channelName)
+	err := mpvInstance.Start()
 	if err != nil {
-		if strings.Contains(string(output), "ytdl") {
-			fmt.Println("\nSeems like you dont have yt-dlp downloaded")
-			fmt.Println("Do you want me to download it and try again")
-			// TODO: download from github or provide it with the app
-			// downloadYTDLP()
-			os.Exit(1)
-		}
+		os.Exit(1)
 	}
-	return nil
+
+	return mpvInstance, err
 }
