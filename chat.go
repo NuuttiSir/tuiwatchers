@@ -275,7 +275,21 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 }
 
 func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
-	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c", "./tuiwatchers --chat "+clientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
+	userTerminal := checkTerminal()
+	if userTerminal == nil {
+		return nil, errors.New("No supported terminal found")
+	}
+	appArgs := []string{
+		"./tuiwatchers",
+		"--chat",
+		clientID,
+		broadcasterID,
+		userID,
+		accessToken,
+	}
+
+	args := append(userTerminal.Args, appArgs...)
+	cmd := exec.Command(userTerminal.Command, args...)
 
 	err := cmd.Start()
 	if err != nil {
