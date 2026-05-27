@@ -5,3 +5,7 @@ Add channel switching without restarting application
 Add anonymous watching
 Add search for channels that are not followed
 Make mpvStart func to call openChat func
+
+
+EMOTES SUPPORT NOT POSSIBLE AS BUBBLETEA DOESNT LIKE THE KITTY RENDERING OR SOMETHING
+NEED TO MAKE OWN RENDERING FOR CHAT

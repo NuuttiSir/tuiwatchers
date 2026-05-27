@@ -10,7 +10,6 @@ import (
 
 const TwitchAPIURL = "https://api.twitch.tv/helix/"
 
-
 func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowDataList {
 	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
 	if err != nil {
