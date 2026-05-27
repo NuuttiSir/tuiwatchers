@@ -77,7 +77,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		am.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate\n", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
 		return am, authPollCommand(msg.DeviceCode)
 	case AuthUserTokenMessage:
-		if msg.Err != nil && msg.UserToken.AccessToken == " " {
+		if msg.Err != nil || msg.UserToken.AccessToken == "" {
 			am.State = pageQuitting
 			am.Err = msg.Err
 			return am, tea.Quit

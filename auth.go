@@ -51,7 +51,6 @@ func getUserToken(deviceCode DeviceCodeResponse) AccessToken {
 			fmt.Println("err:", err)
 			return AccessToken{}
 		}
-		defer resp.Body.Close()
 
 		var userToken AccessToken
 		if err := json.NewDecoder(resp.Body).Decode(&userToken); err != nil {
@@ -62,6 +61,7 @@ func getUserToken(deviceCode DeviceCodeResponse) AccessToken {
 		if userToken.AccessToken != "" {
 			return userToken
 		}
+		resp.Body.Close()
 	}
 }
 
