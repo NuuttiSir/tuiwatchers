@@ -41,7 +41,7 @@ type SendResultMessage struct {
 	Err error
 }
 
-type ClearStatusMEssage struct{}
+type ClearStatusMessage struct{}
 
 type EmoteLoadedMsg struct {
 	ID      string
@@ -100,6 +100,7 @@ func (cm ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return cm, nil
 			}
 
+			cm.TextInput.SetValue("")
 			return cm, tea.Batch(sendChatCommand(cm.BroadcasterID, cm.UserID, cm.AccessToken, text))
 		}
 	case IncomingChatMessage:

@@ -301,12 +301,12 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 				}
 			} else {
 				out <- IncomingChatMessage{
-					User: username,
+					User:  username,
 					Parts: chatMessageParts,
 				}
 			}
 
-		case "sessions_reconnect":
+		case "session_reconnect":
 			// Twitch wants us to reconnect, log it for now for funsies
 			fmt.Println("Twitch has requested reconnect")
 		}
