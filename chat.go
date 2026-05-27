@@ -62,8 +62,21 @@ type SubscriptionRequest struct {
 // Fragment is a fragment of a chat message
 // Twitch splits messages into fragments
 type Fragment struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+	Emote Emote  `json:"emote"`
+}
+
+type Emote struct {
+	ID         string `json:"id"`
+	EmoteSetID string `json:"emote_set_id"`
+	OwnerID    string `json:"owner_id"`
+}
+
+type MessagePart struct {
+	Kind    string // Text or emote
+	Text    string
+	EmoteID string
 }
 
 type ChatMessage struct {
@@ -259,12 +272,38 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 				continue
 			}
 			event := serverMessage.MessagePayload.Event
-			chatMessage := event.Message.Text
 			username := event.ChatterUserName
 
-			out <- IncomingChatMessage{
-				User: username,
-				Text: chatMessage,
+			// Twitch message is just many fragments
+			var chatMessageParts []MessagePart
+			for _, fragment := range event.Message.Fragments {
+				switch fragment.Type {
+				case "text":
+					chatMessageParts = append(chatMessageParts, MessagePart{
+						Kind: "text",
+						Text: fragment.Text,
+					})
+				case "emote":
+					chatMessageParts = append(chatMessageParts, MessagePart{
+						Kind:    "emote",
+						Text:    fragment.Text,
+						EmoteID: fragment.Emote.ID,
+					})
+
+				}
+			}
+
+			// I dont think this == 0 ever fires as I dont think twitch chat message ever has no fragments
+			if len(chatMessageParts) == 0 {
+				out <- IncomingChatMessage{
+					User: username,
+					Text: event.Message.Text,
+				}
+			} else {
+				out <- IncomingChatMessage{
+					User: username,
+					Parts: chatMessageParts,
+				}
 			}
 
 		case "sessions_reconnect":

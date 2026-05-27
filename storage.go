@@ -9,8 +9,8 @@ import (
 
 func saveToken(path, accessToken, userID string) error {
 	file := TokenFile{
-		AccessToken:  accessToken,
-		UserID:       userID,
+		AccessToken: accessToken,
+		UserID:      userID,
 	}
 	bytesWrite, err := json.MarshalIndent(file, "", " ")
 	if err != nil {
