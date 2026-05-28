@@ -9,3 +9,9 @@ Make mpvStart func to call openChat func
 
 EMOTES SUPPORT NOT POSSIBLE AS BUBBLETEA DOESNT LIKE THE KITTY RENDERING OR SOMETHING
 NEED TO MAKE OWN RENDERING FOR CHAT
+
+AND LITTLE LOGGING CAN BE DISABLED
+THIS COMMAND STARTS MPV IN TERMINAL NO NEW WINDOW
+mpv --msg-level=ytdl=debug --log-file=/tmp/mpv.log \
+    --profile=sw-fast --vo=kitty --vo-kitty-use-shm=yes --really-quiet \
+    https://www.twitch.tv/channelname

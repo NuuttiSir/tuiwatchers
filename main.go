@@ -128,14 +128,51 @@ func main() {
 		return
 	}
 
-	if finalModel.Err != nil {
-		fmt.Println(finalModel.Err)
-		return
-	}
+	for {
+		if finalModel.State == pageQuitting || finalModel.SelectedChannel == "" {
+			break
+		}
 
-	broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
-	if broadcasterID == "" {
-		fmt.Println("Could not find broadcaster ID for selected channel")
-		return
+		broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
+		tokenFile := finalModel.TokenFile
+
+		chatCmd, _ := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+
+		mpvCmd, err := startMPVWithStream(finalModel.SelectedChannel)
+		if err == nil && mpvCmd != nil {
+			mpvCmd.Wait()
+		}
+
+		if chatCmd != nil && chatCmd.Process != nil {
+			chatCmd.Process.Kill()
+		}
+
+		// re-show the streams list with the same data
+		prog2 := tea.NewProgram(initialStreamsModel(
+			finalModel.Channels,
+			finalModel.BroadcasterIDs,
+			tokenFile,
+			0, 0,
+		))
+		res2, err := prog2.Run()
+		if err != nil {
+			break
+		}
+		next, ok := res2.(StreamsModel)
+		if !ok {
+			break
+		}
+		finalModel = next
 	}
+	//
+	// if finalModel.Err != nil {
+	// 	fmt.Println(finalModel.Err)
+	// 	return
+	// }
+	//
+	// broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
+	// if broadcasterID == "" {
+	// 	fmt.Println("Could not find broadcaster ID for selected channel")
+	// 	return
+	// }
 }
