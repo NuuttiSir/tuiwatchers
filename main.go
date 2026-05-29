@@ -77,32 +77,37 @@ func openChat() {
 	userID := os.Args[4]
 	accessToken := os.Args[5]
 
-	fmt.Println("CHAT")
-	fmt.Println("Starting chat window")
+	rt, err := newRawTerm()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer rt.restore()
 
-	chatModel := InitialChatModel(broadcasterID, userID, accessToken)
-	program := tea.NewProgram(chatModel)
+	rt.initScreen()
 
-	// channel for incoming messages
+	quit := make(chan struct{})
 	incoming := make(chan IncomingChatMessage, 50)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	//websocket listener
 	go connectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
-
 	go func() {
 		for msg := range incoming {
-			program.Send(msg)
+			// fetch emotes synchronously before printing (Phase 6, Option A)
+			for _, part := range msg.Parts {
+				if part.Kind == "emote" {
+					fetchEmoteBlocking(part.EmoteID)
+				}
+			}
+			line := ChatLine{User: msg.User, Parts: msg.Parts}
+			rt.printMessage(line)
 		}
 	}()
 
-	_, err := program.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-	cancel()
+	rt.inputLoop(broadcasterID, userID, accessToken, quit)
+	<-quit
 }
 
 func main() {
