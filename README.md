@@ -19,7 +19,7 @@ Twitch streamers
 <!-- TODO: ADD GIF TO SHOW APP IN ACTION! -->
 
 TuiWatchers is a different way to watch your favorite streamers in the
-terminal, well kind of. ( No way to watch videos straight in terminal, yet ;) )
+terminal, well kind of.
 
 TuiWatchers is simple and sometimes the better way to consume different games
 and genres.
@@ -38,45 +38,61 @@ of burning myself out in school and useless AI-Slopping^tm around
 
 So enjoy, please <3
 
+## Requirements
+
+- MPV (mpv.io/) | Plays the stream
+- yt-dlp (github.com/yt-dlp/yt-dlp) | MPV uses yt-dlp under the hood
+- Terminal that supports kitty graphics protocol
+        - Ghostty
+        - Kitty
+        - WezTerm
+        - iTerm2
+
 ## Quick Start
 
-### 1. Check requirements
+## Install
 
-- mpv
-- yt-dlp
-- terminal, like ghostty
-- browser, like firefox
+### Option A — Go toolchain (recommended)
 
-### 2. Install TuiWatchers using Go toolchain
+```sh
+go install github.com/NuuttiSir/tuiwatchers@latest
+```
 
-    go install github.com/NuuttiSir/tuiwatchers@latest
+### Option B — Build from source
 
-### 3. Install from github
+```sh
+git clone https://github.com/NuuttiSir/tuiwatchers
+cd tuiwatchers
+go build
+./tuiwatchers
+```
 
-    git clone <url>
-    cd tuiwatchers
-    go build
-
-### 4. RUN THE PROGRAM
-
-    ./tuiwatchers
+See [Dependencies.md](Dependencies.md) for specific setup instructions.
 
 ## Usage
 
-<!-- TODO: TODO -->
+Run the program:
+
+```sh
+./tuiwatchers
+```
 
 ## Contributing
 
+If you would like to contribute, please fork the repository and open a pull
+request to the 'main' branch. Thankz<3
+
 ### Clone the repo
 
-    git clone <url>
+'''sh
+    git clone https://github.com/NuuttiSir/tuiwatchers.git
     cd tuiwatchers
+'''
 
 ### Build the compiled binary
 
+'''sh
     go build
+'''
 
 ### Submit pull request
-
-If you would like to contribute, please fork the repository and open a pull
-request to the 'main' branch. Thankz<3
