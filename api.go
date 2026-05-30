@@ -10,11 +10,10 @@ import (
 
 const TwitchAPIURL = "https://api.twitch.tv/helix/"
 
-func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowDataList {
+func getFollowedChannels(userID, clientID string, userToken AccessToken) (FollowDataList, error) {
 	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
 	if err != nil {
-		fmt.Println("error:", err)
-		return FollowDataList{}
+		return FollowDataList{}, fmt.Errorf("Create request: %w", err)
 	}
 
 	q := req.URL.Query()
@@ -27,30 +26,26 @@ func getFollowedChannels(userID, clientID string, userToken AccessToken) FollowD
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error:", err)
-		return FollowDataList{}
+		return FollowDataList{}, fmt.Errorf("Do request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		fmt.Println("follow error:", resp.Status, string(body))
-		return FollowDataList{}
+		return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
 	}
 
 	var followDataList FollowDataList
 	if err := json.NewDecoder(resp.Body).Decode(&followDataList); err != nil {
-		fmt.Println("error decoding:", err)
-		return FollowDataList{}
+		return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
 	}
-	return followDataList
+	return followDataList, nil
 }
 
-func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {
+func getAuthenticatedUser(clientID string, userToken AccessToken) (UserData, error) {
 	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)
 	if err != nil {
-		fmt.Println("error:", err)
-		return UserData{}
+		return UserData{}, fmt.Errorf("Create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
@@ -59,25 +54,21 @@ func getAuthenticatedUser(clientID string, userToken AccessToken) UserData {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("error:", err)
-		return UserData{}
+		return UserData{}, fmt.Errorf("Do request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		fmt.Println("users error:", resp.Status, string(body))
-		return UserData{}
+		return UserData{}, fmt.Errorf("Api error: %d: %s", resp.StatusCode, string(body))
 	}
 
 	var userDataList UserDataList
 	if err := json.NewDecoder(resp.Body).Decode(&userDataList); err != nil {
-		fmt.Println("error decoding:", err)
-		return UserData{}
+		return UserData{}, fmt.Errorf("Decode error: %w", err)
 	}
 	if len(userDataList.Data) == 0 {
-		fmt.Println("user not found")
-		return UserData{}
+		return UserData{}, fmt.Errorf("User not found error")
 	}
-	return userDataList.Data[0]
+	return userDataList.Data[0], nil
 }
