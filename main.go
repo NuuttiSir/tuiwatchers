@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	_ "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 )
 
@@ -169,15 +168,4 @@ func main() {
 		}
 		finalModel = next
 	}
-	//
-	// if finalModel.Err != nil {
-	// 	fmt.Println(finalModel.Err)
-	// 	return
-	// }
-	//
-	// broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
-	// if broadcasterID == "" {
-	// 	fmt.Println("Could not find broadcaster ID for selected channel")
-	// 	return
-	// }
 }

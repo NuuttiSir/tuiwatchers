@@ -19,12 +19,12 @@ var cache = &EmoteCache{
 	FailedEmotes: make(map[string]bool),
 }
 
-func EmoteImage(id string) ([]byte, bool) {
+func emoteImage(id string) ([]byte, bool) {
 	img, ok := cache.Emotes[id]
 	return img, ok
 }
 
-func GetEmoteImage(id string) tea.Cmd {
+func FetchEmoteImage(id string) tea.Cmd {
 	return func() tea.Msg {
 		if _, failed := cache.FailedEmotes[id]; failed {
 			return EmoteLoadedMsg{ID: id, Success: false}

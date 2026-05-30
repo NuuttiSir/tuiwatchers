@@ -100,8 +100,8 @@ func authStartCommand() tea.Cmd {
 		}
 
 		if validateToken(tokenFile.AccessToken) {
-			followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
-			if len(followDataList.Data) == 0 {
+			followDataList, err := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+			if len(followDataList.Data) == 0 || err != nil {
 				return AuthErrorMessage{Err: errors.New("no followed channels found")}
 			}
 
@@ -131,8 +131,8 @@ func authStartCommand() tea.Cmd {
 		}
 
 		deviceCode := deviceToken(clientID)
-		if deviceCode.DeviceCode == " " {
-			return AuthErrorMessage{Err: errors.New("Could not get device code")}
+		if deviceCode.DeviceCode == "" {
+			return AuthErrorMessage{Err: errors.New("could not get device code")}
 		}
 		return AuthDeviceCodeMessage{DeviceCode: deviceCode}
 	}

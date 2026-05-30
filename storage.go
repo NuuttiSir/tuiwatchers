@@ -12,11 +12,11 @@ func saveToken(path, accessToken, userID string) error {
 		AccessToken: accessToken,
 		UserID:      userID,
 	}
-	bytesWrite, err := json.MarshalIndent(file, "", " ")
+	bytesWrite, err := json.MarshalIndent(file, "", "\t")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, bytesWrite, 0666)
+	return os.WriteFile(path, bytesWrite, 0644)
 }
 
 func tokenLoad(path string) (TokenFile, error) {

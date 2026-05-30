@@ -9,7 +9,6 @@ type page int
 const (
 	pageDependencyCheck = iota
 	pageAuthentication
-	// pageAuthSuccess
 	pageStreams
 	pageQuitting
 )

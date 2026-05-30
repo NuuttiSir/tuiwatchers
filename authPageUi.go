@@ -65,7 +65,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return am, cmd
 	case AuthSuccessMessage:
 		am.PendingAuth = msg
-		am.AuthStatus = "Successfull authentication"
+		am.AuthStatus = "Successful authentication"
 		// TODO: Remove delay FUNC call
 		return am, authSuccessDelayCommand()
 	case AuthErrorMessage:
@@ -77,63 +77,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		am.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate\n", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
 		return am, authPollCommand(msg.DeviceCode)
 	case AuthUserTokenMessage:
-		if msg.Err != nil || msg.UserToken.AccessToken == "" {
-			am.State = pageQuitting
-			am.Err = msg.Err
-			return am, tea.Quit
-		}
-
-		authUser := getAuthenticatedUser(clientID, msg.UserToken)
-		if authUser.ID == "" {
-			am.State = pageQuitting
-			am.Err = errors.New("Could not fetch user data")
-			return am, tea.Quit
-		}
-
-		if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
-			am.State = pageQuitting
-			am.Err = err
-			return am, tea.Quit
-		}
-		tokenFile, err := tokenLoad(tokenFilePath)
-		if err != nil {
-			am.State = pageQuitting
-			am.Err = err
-			return am, tea.Quit
-		}
-		followDataList := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
-		if len(followDataList.Data) == 0 {
-			am.State = pageQuitting
-			am.Err = errors.New("no followed channels found")
-			return am, tea.Quit
-		}
-		channels := make([]ChannelInfo, 0, len(followDataList.Data))
-		ids := make(map[string]string)
-		for _, channel := range followDataList.Data {
-			if channel.Type != "live" {
-				continue
-			}
-			channels = append(channels, ChannelInfo{
-				BroadcasterName: channel.UserName,
-				GameName:        channel.GameName,
-				ViewCount:       channel.ViewerCount,
-			})
-			ids[channel.UserName] = channel.UserID
-		}
-
-		if len(channels) == 0 {
-			am.State = pageQuitting
-			am.Err = errors.New("no live channels found")
-			return am, tea.Quit
-		}
-
-		return am, func() tea.Msg {
-			return AuthSuccessMessage{
-				ChannelList:    channels,
-				BroadcasterIDs: ids,
-				TokenFile:      tokenFile,
-			}
-		}
+		return am.handleAuthUserToken(msg)
 	case AuthDelayCompleteMessage:
 		return initialStreamsModel(
 			am.PendingAuth.ChannelList,
@@ -163,25 +107,88 @@ func (am AuthModel) View() tea.View {
 		if am.AuthStatus != "" {
 			status = fmt.Sprintf("%s\n%s %s", status, am.Spinner.View(), am.AuthStatus)
 		}
-		str := fmt.Sprintf("%s %s", am.Spinner.View(), status)
-		v := tea.NewView(docStyle.Render(str))
-		v.AltScreen = true
-		return v
+		str = fmt.Sprintf("%s %s", am.Spinner.View(), status)
+		return renderView(str)
 	case pageQuitting:
 		if am.Err != nil {
 			str = fmt.Sprintf("Error: %v\n", am.Err)
-			v := tea.NewView(docStyle.Render(str))
-			v.AltScreen = true
-			return v
+			return renderView(str)
 		}
 		str = "Goodbye.\n"
-		v := tea.NewView(docStyle.Render(str))
-		v.AltScreen = true
-		return v
+		return renderView(str)
 	default:
 		str = "\n"
-		v := tea.NewView(docStyle.Render(str))
-		v.AltScreen = true
-		return v
+		return renderView(str)
 	}
+}
+
+func (am AuthModel) handleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, tea.Cmd) {
+	if msg.Err != nil || msg.UserToken.AccessToken == "" {
+		am.State = pageQuitting
+		am.Err = msg.Err
+		return am, tea.Quit
+	}
+
+	authUser, err := getAuthenticatedUser(clientID, msg.UserToken)
+	if authUser.ID == "" || err != nil {
+		am.State = pageQuitting
+		am.Err = errors.New("could not fetch user data")
+		return am, tea.Quit
+	}
+
+	if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
+		am.State = pageQuitting
+		am.Err = err
+		return am, tea.Quit
+	}
+	tokenFile, err := tokenLoad(tokenFilePath)
+	if err != nil {
+		am.State = pageQuitting
+		am.Err = err
+		return am, tea.Quit
+	}
+	followDataList, err := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+	if len(followDataList.Data) == 0 || err != nil {
+		am.State = pageQuitting
+		am.Err = errors.New("no followed channels found")
+		return am, tea.Quit
+	}
+
+	channels, ids := am.buildChannelList(followDataList)
+	if len(channels) == 0 {
+		am.State = pageQuitting
+		am.Err = errors.New("no live channels found")
+		return am, tea.Quit
+	}
+
+	return am, func() tea.Msg {
+		return AuthSuccessMessage{
+			ChannelList:    channels,
+			BroadcasterIDs: ids,
+			TokenFile:      tokenFile,
+		}
+	}
+}
+
+func (am AuthModel) buildChannelList(followDataList FollowDataList) ([]ChannelInfo, map[string]string) {
+	channels := make([]ChannelInfo, 0, len(followDataList.Data))
+	ids := make(map[string]string)
+	for _, channel := range followDataList.Data {
+		if channel.Type != "live" {
+			continue
+		}
+		channels = append(channels, ChannelInfo{
+			BroadcasterName: channel.UserName,
+			GameName:        channel.GameName,
+			ViewCount:       channel.ViewerCount,
+		})
+		ids[channel.UserName] = channel.UserID
+	}
+	return channels, ids
+}
+
+func renderView(str string) tea.View {
+	v := tea.NewView(docStyle.Render(str))
+	v.AltScreen = true
+	return v
 }
