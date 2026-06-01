@@ -30,7 +30,7 @@ func DeviceToken() DeviceCodeResponse {
 	return deviceCodeResponse
 }
 
-func GetUserToken(deviceCode DeviceCodeResponse) AccessToken {
+func GetUserToken(/**ctx context.Context,**/ deviceCode DeviceCodeResponse) AccessToken {
 	for {
 		time.Sleep(time.Duration(deviceCode.Interval) * time.Second)
 

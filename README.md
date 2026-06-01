@@ -40,13 +40,9 @@ So enjoy, please <3
 
 ## Requirements
 
-- MPV (mpv.io/) | Plays the stream
-- yt-dlp (github.com/yt-dlp/yt-dlp) | MPV uses yt-dlp under the hood
-- Terminal that supports kitty graphics protocol
-        - Ghostty
-        - Kitty
-        - WezTerm
-        - iTerm2
+- **MPV** (mpv.io/) | Plays the stream
+- **yt-dlp** (github.com/yt-dlp/yt-dlp) | MPV uses yt-dlp under the hood
+- **Ghostty terminal**, I have not gotten this to work on others
 
 ## Quick Start
 

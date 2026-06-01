@@ -8,6 +8,7 @@ import (
 	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
 	"golang.org/x/term"
 )
+
 type RawTerminal struct {
 	FileDescriptor int
 	Old            *term.State
@@ -17,12 +18,10 @@ type RawTerminal struct {
 	mu             sync.Mutex
 }
 
-
 type ChatLine struct {
 	User  string
 	Parts []twitch.MessagePart
 }
-
 
 func NewRawTerm() (*RawTerminal, error) {
 	fileDescriptor := int(os.Stdin.Fd())
