@@ -15,3 +15,5 @@ THIS COMMAND STARTS MPV IN TERMINAL NO NEW WINDOW
 mpv --msg-level=ytdl=debug --log-file=/tmp/mpv.log \
     --profile=sw-fast --vo=kitty --vo-kitty-use-shm=yes --really-quiet \
     https://www.twitch.tv/channelname
+
+DOES NOT WORK IN TMUX ATM
