@@ -17,3 +17,4 @@ mpv --msg-level=ytdl=debug --log-file=/tmp/mpv.log \
     https://www.twitch.tv/channelname
 
 DOES NOT WORK IN TMUX ATM
+I MIGHT WANT TO REMOVE BUBBLETEA ALL TOGETHER ATM

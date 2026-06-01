@@ -1,4 +1,4 @@
-// NOTE: Cant use refreshtokens because they need client secret and cant give that publicly
+// NOTE: Cant use refresh tokens because they need client secret and cant give that publicly
 package main
 
 import (
@@ -49,7 +49,6 @@ func openChat() {
 	go twitch.ConnectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
 	go func() {
 		for msg := range incoming {
-			// fetch emotes synchronously before printing (Phase 6, Option A)
 			for _, part := range msg.Parts {
 				if part.Kind == "emote" {
 					emotes.FetchEmoteImage(part.EmoteID)
