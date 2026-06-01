@@ -84,15 +84,15 @@ request to the 'main' branch. Thankz<3
 
 ### Clone the repo
 
-'''sh
-    git clone https://github.com/NuuttiSir/tuiwatchers.git
-    cd tuiwatchers
-'''
+```sh
+git clone https://github.com/NuuttiSir/tuiwatchers.git
+cd tuiwatchers
+```
 
 ### Build the compiled binary
 
-'''sh
+```sh
     go build
-'''
+```
 
 ### Submit pull request
