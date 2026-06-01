@@ -1,11 +1,11 @@
-package main
+package player
 
 import (
 	"os"
 	"os/exec"
 )
 
-func startMPVWithStream(channelName string) (*exec.Cmd, error) {
+func StartMPVWithStream(channelName string) (*exec.Cmd, error) {
 	mpvInstance := exec.Command("/usr/bin/mpv",
 		"--profile=sw-fast",
 		"--vo=kitty",

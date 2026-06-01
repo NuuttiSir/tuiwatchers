@@ -1,12 +1,19 @@
-package main
+package tui
 
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/NuuttiSir/tuiwatchers/internal/storage"
+	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
+)
+
+const (
+	tokenFilePath = "tokens.json"
 )
 
 type AuthModel struct {
@@ -15,8 +22,8 @@ type AuthModel struct {
 	WindowWidth  int
 	WindowHeight int
 	AuthStatus   string
-	TokenFile    TokenFile
-	DeviceCode   DeviceCodeResponse
+	TokenFile    storage.TokenFile
+	DeviceCode   twitch.DeviceCodeResponse
 	PendingAuth  AuthSuccessMessage
 	Err          error
 }
@@ -24,7 +31,7 @@ type AuthModel struct {
 type AuthSuccessMessage struct {
 	ChannelList    []ChannelInfo
 	BroadcasterIDs map[string]string
-	TokenFile      TokenFile
+	TokenFile      storage.TokenFile
 }
 
 type AuthErrorMessage struct {
@@ -32,29 +39,29 @@ type AuthErrorMessage struct {
 }
 
 type AuthDeviceCodeMessage struct {
-	DeviceCode DeviceCodeResponse
+	DeviceCode twitch.DeviceCodeResponse
 }
 
 type AuthUserTokenMessage struct {
-	UserToken AccessToken
+	UserToken twitch.AccessToken
 	Err       error
 }
 
 type AuthDelayCompleteMessage struct{}
 
-func initialAuthModel() AuthModel {
+func InitialAuthModel() AuthModel {
 	Spinner := spinner.New()
 	Spinner.Spinner = spinner.Dot
 	Spinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return AuthModel{
-		State:   pageAuthentication,
+		State:   PageAuthentication,
 		Spinner: Spinner,
 	}
 }
 
 func (am AuthModel) Init() tea.Cmd {
-	return tea.Batch(am.Spinner.Tick, authStartCommand())
+	return tea.Batch(am.Spinner.Tick, AuthStartCommand())
 }
 
 func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -67,19 +74,19 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		am.PendingAuth = msg
 		am.AuthStatus = "Successful authentication"
 		// TODO: Remove delay FUNC call
-		return am, authSuccessDelayCommand()
+		return am, AuthSuccessDelayCommand()
 	case AuthErrorMessage:
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = msg.Err
 		return am, tea.Quit
 	case AuthDeviceCodeMessage:
 		am.DeviceCode = msg.DeviceCode
 		am.AuthStatus = fmt.Sprintf("Go to %s and input code %s to authenticate\n", msg.DeviceCode.VerificationURI, msg.DeviceCode.UserCode)
-		return am, authPollCommand(msg.DeviceCode)
+		return am, AuthPollCommand(msg.DeviceCode)
 	case AuthUserTokenMessage:
-		return am.handleAuthUserToken(msg)
+		return am.HandleAuthUserToken(msg)
 	case AuthDelayCompleteMessage:
-		return initialStreamsModel(
+		return InitialStreamsModel(
 			am.PendingAuth.ChannelList,
 			am.PendingAuth.BroadcasterIDs,
 			am.PendingAuth.TokenFile,
@@ -92,7 +99,7 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			am.State = pageQuitting
+			am.State = PageQuitting
 			return am, tea.Quit
 		}
 	}
@@ -102,14 +109,14 @@ func (am AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (am AuthModel) View() tea.View {
 	var str string
 	switch am.State {
-	case pageAuthentication:
+	case PageAuthentication:
 		status := "Authenticating..."
 		if am.AuthStatus != "" {
 			status = fmt.Sprintf("%s\n%s %s", status, am.Spinner.View(), am.AuthStatus)
 		}
 		str = fmt.Sprintf("%s %s", am.Spinner.View(), status)
 		return renderView(str)
-	case pageQuitting:
+	case PageQuitting:
 		if am.Err != nil {
 			str = fmt.Sprintf("Error: %v\n", am.Err)
 			return renderView(str)
@@ -122,41 +129,41 @@ func (am AuthModel) View() tea.View {
 	}
 }
 
-func (am AuthModel) handleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, tea.Cmd) {
+func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, tea.Cmd) {
 	if msg.Err != nil || msg.UserToken.AccessToken == "" {
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = msg.Err
 		return am, tea.Quit
 	}
 
-	authUser, err := getAuthenticatedUser(clientID, msg.UserToken)
+	authUser, err := twitch.GetAuthenticatedUser(twitch.ClientID, msg.UserToken)
 	if authUser.ID == "" || err != nil {
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = errors.New("could not fetch user data")
 		return am, tea.Quit
 	}
 
-	if err := saveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
-		am.State = pageQuitting
+	if err := storage.SaveToken(tokenFilePath, msg.UserToken.AccessToken, authUser.ID); err != nil {
+		am.State = PageQuitting
 		am.Err = err
 		return am, tea.Quit
 	}
-	tokenFile, err := tokenLoad(tokenFilePath)
+	tokenFile, err := storage.TokenLoad(tokenFilePath)
 	if err != nil {
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = err
 		return am, tea.Quit
 	}
-	followDataList, err := getFollowedChannels(tokenFile.UserID, clientID, AccessToken{AccessToken: tokenFile.AccessToken})
+	followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
 	if len(followDataList.Data) == 0 || err != nil {
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = errors.New("no followed channels found")
 		return am, tea.Quit
 	}
 
-	channels, ids := am.buildChannelList(followDataList)
+	channels, ids := am.BuildChannelList(followDataList)
 	if len(channels) == 0 {
-		am.State = pageQuitting
+		am.State = PageQuitting
 		am.Err = errors.New("no live channels found")
 		return am, tea.Quit
 	}
@@ -170,7 +177,7 @@ func (am AuthModel) handleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, te
 	}
 }
 
-func (am AuthModel) buildChannelList(followDataList FollowDataList) ([]ChannelInfo, map[string]string) {
+func (am AuthModel) BuildChannelList(followDataList twitch.FollowDataList) ([]ChannelInfo, map[string]string) {
 	channels := make([]ChannelInfo, 0, len(followDataList.Data))
 	ids := make(map[string]string)
 	for _, channel := range followDataList.Data {
@@ -187,8 +194,56 @@ func (am AuthModel) buildChannelList(followDataList FollowDataList) ([]ChannelIn
 	return channels, ids
 }
 
-func renderView(str string) tea.View {
-	v := tea.NewView(docStyle.Render(str))
-	v.AltScreen = true
-	return v
+func AuthStartCommand() tea.Cmd {
+	return func() tea.Msg {
+		if err := storage.CheckTokenFile(tokenFilePath); err != nil {
+			return AuthErrorMessage{Err: err}
+		}
+
+		tokenFile, err := storage.TokenLoad(tokenFilePath)
+		if err != nil {
+			return AuthErrorMessage{Err: err}
+		}
+
+		if twitch.ValidateToken(tokenFile.AccessToken) {
+			followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
+			if len(followDataList.Data) == 0 || err != nil {
+				return AuthErrorMessage{Err: err}
+			}
+
+			channels, ids := InitialAuthModel().BuildChannelList(followDataList)
+			if len(channels) == 0 {
+				return AuthErrorMessage{Err: errors.New("no live channels found")}
+			}
+
+			return AuthSuccessMessage{
+				ChannelList:    channels,
+				BroadcasterIDs: ids,
+				TokenFile:      tokenFile,
+			}
+		}
+
+		deviceCode := twitch.DeviceToken()
+		if deviceCode.DeviceCode == "" {
+			return AuthErrorMessage{Err: errors.New("could not get device code")}
+		}
+		return AuthDeviceCodeMessage{DeviceCode: deviceCode}
+	}
+}
+
+func AuthPollCommand(deviceCode twitch.DeviceCodeResponse) tea.Cmd {
+	return func() tea.Msg {
+		userToken := twitch.GetUserToken(deviceCode)
+		if userToken.AccessToken == "" {
+			return AuthErrorMessage{Err: errors.New("authentication failed")}
+		}
+		return AuthUserTokenMessage{UserToken: userToken}
+
+	}
+}
+
+func AuthSuccessDelayCommand() tea.Cmd {
+	return tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+		return AuthDelayCompleteMessage{}
+	})
 }

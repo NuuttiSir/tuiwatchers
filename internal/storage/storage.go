@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"encoding/json"
@@ -7,7 +7,13 @@ import (
 	"os"
 )
 
-func saveToken(path, accessToken, userID string) error {
+type TokenFile struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	UserID       string `json:"user_id"`
+}
+
+func SaveToken(path, accessToken, userID string) error {
 	file := TokenFile{
 		AccessToken: accessToken,
 		UserID:      userID,
@@ -19,7 +25,7 @@ func saveToken(path, accessToken, userID string) error {
 	return os.WriteFile(path, bytesWrite, 0644)
 }
 
-func tokenLoad(path string) (TokenFile, error) {
+func TokenLoad(path string) (TokenFile, error) {
 	bytesRead, err := os.ReadFile(path)
 	if err != nil {
 		return TokenFile{}, err
@@ -31,11 +37,11 @@ func tokenLoad(path string) (TokenFile, error) {
 	return tokenFile, nil
 }
 
-func checkTokenFile(tokenFilePath string) error {
+func CheckTokenFile(tokenFilePath string) error {
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
-		fmt.Println("tokens.json not found... Creating")
-		if err := saveToken(tokenFilePath, "", ""); err != nil {
-			fmt.Println("err creating token file:", err)
+		fmt.Println("tokens.json not found... Creating file")
+		if err := SaveToken(tokenFilePath, "", ""); err != nil {
+			return err
 		}
 	}
 	return nil
