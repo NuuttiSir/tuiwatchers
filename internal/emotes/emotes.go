@@ -1,9 +1,10 @@
-package main
+package emotes
 
 import (
 	"encoding/base64"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -12,6 +13,12 @@ import (
 type EmoteCache struct {
 	Emotes       map[string][]byte
 	FailedEmotes map[string]bool
+	RWM          sync.RWMutex
+}
+
+type EmoteLoadedMsg struct {
+	ID      string
+	Success bool
 }
 
 var cache = &EmoteCache{
@@ -19,17 +26,24 @@ var cache = &EmoteCache{
 	FailedEmotes: make(map[string]bool),
 }
 
-func emoteImage(id string) ([]byte, bool) {
+func EmoteImage(id string) ([]byte, bool) {
+	cache.RWM.RLock()
+	defer cache.RWM.RUnlock()
 	img, ok := cache.Emotes[id]
 	return img, ok
 }
 
 func FetchEmoteImage(id string) tea.Cmd {
 	return func() tea.Msg {
-		if _, failed := cache.FailedEmotes[id]; failed {
+		cache.RWM.RLock()
+		_, failed := cache.FailedEmotes[id]
+		_, ok := cache.Emotes[id]
+		cache.RWM.RUnlock()
+
+		if failed {
 			return EmoteLoadedMsg{ID: id, Success: false}
 		}
-		if _, ok := cache.Emotes[id]; ok {
+		if ok {
 			return EmoteLoadedMsg{ID: id, Success: true}
 		}
 
@@ -50,7 +64,10 @@ func FetchEmoteImage(id string) tea.Cmd {
 			return EmoteLoadedMsg{ID: id, Success: false}
 		}
 
+		cache.RWM.Lock()
 		cache.Emotes[id] = data
+		cache.RWM.Unlock()
+
 		return EmoteLoadedMsg{ID: id, Success: true}
 	}
 }
@@ -58,7 +75,7 @@ func FetchEmoteImage(id string) tea.Cmd {
 // NOTE: This is ATM a signle-chunk transmission. Images larger than 4mb one
 // would need to split into chunks with m=
 // Twitch emotes as earlier stated with scale 1.0 are not that big
-func kittyInlineImage(data []byte) string {
+func KittyInlineImage(data []byte) string {
 	encoded := base64.StdEncoding.EncodeToString(data)
 	// f=100 = PNG, a=T = transmit+display, q=2 = suppress response
 	// C=1    → advance cursor cell after image (inline placement)

@@ -1,0 +1,264 @@
+package twitch
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+)
+
+const TwitchAPIURL = "https://api.twitch.tv/helix/"
+
+type AccessToken struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	TokenType    string `json:"token_type"`
+}
+type DeviceCodeResponse struct {
+	DeviceCode      string `json:"device_code"`
+	Interval        int    `json:"interval"`
+	UserCode        string `json:"user_code"`
+	VerificationURI string `json:"verification_uri"`
+}
+type UserData struct {
+	BroadcasterType string    `json:"broadcaster_type"`
+	CreatedAt       time.Time `json:"created_at"`
+	Description     string    `json:"description"`
+	DisplayName     string    `json:"display_name"`
+	ID              string    `json:"id"`
+	Login           string    `json:"login"`
+	OfflineImageURL string    `json:"offline_image_url"`
+	ProfileImageURL string    `json:"profile_image_url"`
+	Type            string    `json:"type"`
+	ViewCount       int       `json:"view_count"`
+}
+
+type UserDataList struct {
+	Data []UserData `json:"data"`
+}
+
+type FollowData struct {
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	UserLogin    string    `json:"user_login"`
+	UserName     string    `json:"user_name"`
+	GameID       string    `json:"game_id"`
+	GameName     string    `json:"game_name"`
+	Type         string    `json:"type"`
+	Title        string    `json:"title"`
+	ViewerCount  int       `json:"viewer_count"`
+	StartedAt    time.Time `json:"started_at"`
+	Language     string    `json:"language"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+	TagIds       []any     `json:"tag_ids"`
+	Tags         []string  `json:"tags"`
+}
+
+type FollowDataList struct {
+	Data       []FollowData `json:"data"`
+	Pagination struct {
+		Cursor string `json:"cursor"`
+	} `json:"pagination"`
+}
+
+type Condition struct {
+	BroadcasterUserID string `json:"broadcaster_user_id"`
+	UserID            string `json:"user_id"`
+}
+
+type Transport struct {
+	Method    string `json:"method"`
+	SessionID string `json:"session_id"`
+}
+
+type SubscriptionRequest struct {
+	Type      string    `json:"type"`
+	Version   string    `json:"version"`
+	Condition Condition `json:"condition"`
+	Transport Transport `json:"transport"`
+}
+
+type SendChatMessage struct {
+	BroadcasterID string `json:"broadcaster_id"`
+	SenderID      string `json:"sender_id"`
+	Message       string `json:"message"`
+}
+
+type ReceivedChatMessageAnswer struct {
+	MessageID  string     `json:"message_id"`
+	IsSent     bool       `json:"is_sent"`
+	DropReason DropReason `json:"drop_reason"`
+}
+
+type DropReason struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func GetFollowedChannels(userID, clientID string, userToken AccessToken) (FollowDataList, error) {
+	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
+	if err != nil {
+		return FollowDataList{}, fmt.Errorf("Create request: %w", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("user_id", userID)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
+	req.Header.Set("Client-Id", clientID)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return FollowDataList{}, fmt.Errorf("Do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
+	}
+
+	var followDataList FollowDataList
+	if err := json.NewDecoder(resp.Body).Decode(&followDataList); err != nil {
+		return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
+	}
+	return followDataList, nil
+}
+
+func GetAuthenticatedUser(clientID string, userToken AccessToken) (UserData, error) {
+	req, err := http.NewRequest("GET", TwitchAPIURL+"users", nil)
+	if err != nil {
+		return UserData{}, fmt.Errorf("Create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
+	req.Header.Set("Client-Id", clientID)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return UserData{}, fmt.Errorf("Do request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return UserData{}, fmt.Errorf("Api error: %d: %s", resp.StatusCode, string(body))
+	}
+
+	var userDataList UserDataList
+	if err := json.NewDecoder(resp.Body).Decode(&userDataList); err != nil {
+		return UserData{}, fmt.Errorf("Decode error: %w", err)
+	}
+	if len(userDataList.Data) == 0 {
+		return UserData{}, fmt.Errorf("User not found error")
+	}
+	return userDataList.Data[0], nil
+}
+
+func PostChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
+	data := SendChatMessage{
+		BroadcasterID: broadcasterID,
+		SenderID:      userID,
+		Message:       message,
+	}
+	body, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/chat/messages", bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Client-Id", ClientID)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	defer resp.Body.Close()
+
+	var chatMessageAnswer ReceivedChatMessageAnswer
+	dat, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+	err = json.Unmarshal(dat, &chatMessageAnswer)
+	if err != nil {
+		fmt.Println(err)
+		return ReceivedChatMessageAnswer{}
+	}
+
+	return ReceivedChatMessageAnswer{
+		MessageID: chatMessageAnswer.MessageID,
+		IsSent:    chatMessageAnswer.IsSent,
+	}
+
+}
+
+// func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
+// 	return func() tea.Msg {
+// 		resp := PostChatMessage(broadcasterID, userID, accessToken, message)
+// 		if !resp.IsSent {
+// 			return chat.SendResultMessage{
+// 				Ok:  false,
+// 				Err: errors.New(resp.DropReason.Message),
+// 			}
+// 		}
+// 		return chat.SendResultMessage{Ok: true}
+//
+// 	}
+// }
+
+func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
+	data := SubscriptionRequest{
+		Type:    "channel.chat.message",
+		Version: "1",
+		Condition: Condition{
+			BroadcasterUserID: broadcasterID,
+			UserID:            userID,
+		},
+		Transport: Transport{
+			Method:    "websocket",
+			SessionID: sessionID,
+		},
+	}
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/eventsub/subscriptions", bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Client-Id", clientID)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+}

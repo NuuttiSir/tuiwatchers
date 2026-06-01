@@ -1,10 +1,11 @@
-package main
+package tui
 
 import (
 	"fmt"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
+	"github.com/NuuttiSir/tuiwatchers/internal/storage"
 )
 
 type StreamsModel struct {
@@ -14,7 +15,7 @@ type StreamsModel struct {
 	ChannelList     list.Model
 	SelectedChannel string
 	BroadcasterIDs  map[string]string
-	TokenFile       TokenFile
+	TokenFile       storage.TokenFile
 	WindowWidth     int
 	WindowHeight    int
 }
@@ -24,24 +25,23 @@ type ChannelInfo struct {
 	ViewCount       int
 }
 
-func initialStreamsModel(channels []ChannelInfo, ids map[string]string, tokenFile TokenFile, width, height int) StreamsModel {
-	channelList := newChannelList(channels)
-	channelList.SetSize(width, height)
-	return StreamsModel{
-		State:          pageStreams,
-		Channels:       channels,
-		ChannelList:    channelList,
-		BroadcasterIDs: ids,
-		TokenFile:      tokenFile,
-	}
-}
-
 func (chInfo ChannelInfo) FilterValue() string { return chInfo.BroadcasterName + " " + chInfo.GameName }
 func (chInfo ChannelInfo) Title() string       { return chInfo.BroadcasterName }
 func (chInfo ChannelInfo) Description() string {
 	return fmt.Sprintf("%s - %d viewers", chInfo.GameName, chInfo.ViewCount)
 }
 
+func InitialStreamsModel(channels []ChannelInfo, ids map[string]string, tokenFile storage.TokenFile, width, height int) StreamsModel {
+	channelList := newChannelList(channels)
+	channelList.SetSize(width, height)
+	return StreamsModel{
+		State:          PageStreams,
+		Channels:       channels,
+		ChannelList:    channelList,
+		BroadcasterIDs: ids,
+		TokenFile:      tokenFile,
+	}
+}
 func newChannelList(channels []ChannelInfo) list.Model {
 	items := make([]list.Item, 0, len(channels))
 	for _, channel := range channels {
@@ -74,7 +74,7 @@ func (sm StreamsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			sm.State = pageQuitting
+			sm.State = PageQuitting
 			return sm, tea.Quit
 		case "enter":
 			item, ok := sm.ChannelList.SelectedItem().(ChannelInfo)
