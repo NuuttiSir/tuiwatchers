@@ -16,7 +16,7 @@ import (
 )
 
 func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
-	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c",
+	cmd := exec.Command("ghostty"+"-e", "bash", "-c",
 		"./tuiwatchers --chat "+twitch.ClientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
 
 	if err := cmd.Start(); err != nil {
@@ -94,18 +94,18 @@ func main() {
 		broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
 		tokenFile := finalModel.TokenFile
 
-		chatCmd, _ := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
-
 		mpvCmd, err := player.StartMPVWithStream(finalModel.SelectedChannel)
 		if err == nil && mpvCmd != nil {
 			mpvCmd.Wait()
 		}
 
+		chatCmd, _ := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 		if chatCmd != nil && chatCmd.Process != nil {
 			chatCmd.Process.Kill()
 		}
 
 		// re-show the streams list with the same data
+		// If streamer goes offline while watching other streams, IDK if their streams show on the list and what happens if clicked
 		prog2 := tea.NewProgram(tui.InitialStreamsModel(
 			finalModel.Channels,
 			finalModel.BroadcasterIDs,
