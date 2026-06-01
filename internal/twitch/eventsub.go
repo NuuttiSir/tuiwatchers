@@ -1,22 +1,19 @@
-// TODO: MAKE THE NEW CHAT TERMINAL OPEN ON THE RIGHT SIDE OF THE MONITOR
-// <CHECK player.go file for instructions>
-package main
+package twitch
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"os/exec"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/coder/websocket"
 )
 
+type IncomingChatMessage struct {
+	User  string
+	Parts []MessagePart
+	Text  string
+}
 type Metadata struct {
 	MessageID        string    `json:"message_id"`
 	MessageType      string    `json:"message_type"`
@@ -40,23 +37,6 @@ type Session struct {
 type ServerMessage struct {
 	Metadata       Metadata       `json:"metadata"`
 	MessagePayload MessagePayload `json:"payload"`
-}
-
-type Condition struct {
-	BroadcasterUserID string `json:"broadcaster_user_id"`
-	UserID            string `json:"user_id"`
-}
-
-type Transport struct {
-	Method    string `json:"method"`
-	SessionID string `json:"session_id"`
-}
-
-type SubscriptionRequest struct {
-	Type      string    `json:"type"`
-	Version   string    `json:"version"`
-	Condition Condition `json:"condition"`
-	Transport Transport `json:"transport"`
 }
 
 // Fragment is a fragment of a chat message
@@ -97,126 +77,7 @@ type ChatEvent struct {
 	Color                string      `json:"color"`
 }
 
-type SendChatMessage struct {
-	BroadcasterID string `json:"broadcaster_id"`
-	SenderID      string `json:"sender_id"`
-	Message       string `json:"message"`
-}
-
-type ReceivedChatMessageAnswer struct {
-	MessageID  string     `json:"message_id"`
-	IsSent     bool       `json:"is_sent"`
-	DropReason DropReason `json:"drop_reason"`
-}
-
-type DropReason struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-func sendChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
-	data := SendChatMessage{
-		BroadcasterID: broadcasterID,
-		SenderID:      userID,
-		Message:       message,
-	}
-	body, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-
-	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/chat/messages", bytes.NewBuffer(body))
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Client-Id", clientID)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-	defer resp.Body.Close()
-
-	var chatMessageAnswer ReceivedChatMessageAnswer
-	dat, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-	err = json.Unmarshal(dat, &chatMessageAnswer)
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-
-	return ReceivedChatMessageAnswer{
-		MessageID: chatMessageAnswer.MessageID,
-		IsSent:    chatMessageAnswer.IsSent,
-	}
-
-}
-
-func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
-	return func() tea.Msg {
-		resp := sendChatMessage(broadcasterID, userID, accessToken, message)
-		if !resp.IsSent {
-			return SendResultMessage{
-				Ok:  false,
-				Err: errors.New(resp.DropReason.Message),
-			}
-		}
-		return SendResultMessage{Ok: true}
-
-	}
-}
-
-func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
-	data := SubscriptionRequest{
-		Type:    "channel.chat.message",
-		Version: "1",
-		Condition: Condition{
-			BroadcasterUserID: broadcasterID,
-			UserID:            userID,
-		},
-		Transport: Transport{
-			Method:    "websocket",
-			SessionID: sessionID,
-		},
-	}
-
-	body, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/eventsub/subscriptions", bytes.NewBuffer(body))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Client-Id", clientID)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer resp.Body.Close()
-}
-
-func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {
+func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {
 	// Open WebSocket connection
 	conn, _, err := websocket.Dial(ctx, "wss://eventsub.wss.twitch.tv/ws", nil)
 	if err != nil {
@@ -257,7 +118,7 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 			sessionID := serverMessage.MessagePayload.Session.ID
 
 			// SUBSCRIBE immediately with the SESSION ID
-			postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken)
+			postSubscribe(ClientID, userID, broadcasterID, sessionID, accessToken)
 
 		case "session_keepalive":
 			// Twitch sends these periodically to inform its still here
@@ -311,30 +172,4 @@ func connectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 			fmt.Println("Twitch has requested reconnect")
 		}
 	}
-}
-
-func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
-	userTerminal := checkTerminal()
-	if userTerminal == nil {
-		return nil, errors.New("No supported terminal found")
-	}
-	appArgs := []string{
-		"./tuiwatchers",
-		"--chat",
-		clientID,
-		broadcasterID,
-		userID,
-		accessToken,
-	}
-
-	args := append(userTerminal.Args, appArgs...)
-	cmd := exec.Command(userTerminal.Command, args...)
-
-	err := cmd.Start()
-	if err != nil {
-		fmt.Println("Terminal window opening error", err)
-		return nil, err
-	}
-
-	return cmd, err
 }

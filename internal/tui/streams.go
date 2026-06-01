@@ -1,41 +1,28 @@
-package main
+package tui
 
 import (
 	"fmt"
-	"os/exec"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
+	"github.com/NuuttiSir/tuiwatchers/internal/storage"
 )
 
 type StreamsModel struct {
 	State           page
 	Err             error
+	Channels        []ChannelInfo
 	ChannelList     list.Model
 	SelectedChannel string
 	BroadcasterIDs  map[string]string
-	TokenFile       TokenFile
+	TokenFile       storage.TokenFile
 	WindowWidth     int
 	WindowHeight    int
-
-	ActiveMPV  *exec.Cmd
-	ActiveChat *exec.Cmd
 }
 type ChannelInfo struct {
 	BroadcasterName string
 	GameName        string
 	ViewCount       int
-}
-
-func initialStreamsModel(channels []ChannelInfo, ids map[string]string, tokenFile TokenFile, width, height int) StreamsModel {
-	channelList := newChannelList(channels)
-	channelList.SetSize(width, height)
-	return StreamsModel{
-		State:          pageStreams,
-		ChannelList:    channelList,
-		BroadcasterIDs: ids,
-		TokenFile:      tokenFile,
-	}
 }
 
 func (chInfo ChannelInfo) FilterValue() string { return chInfo.BroadcasterName + " " + chInfo.GameName }
@@ -44,6 +31,17 @@ func (chInfo ChannelInfo) Description() string {
 	return fmt.Sprintf("%s - %d viewers", chInfo.GameName, chInfo.ViewCount)
 }
 
+func InitialStreamsModel(channels []ChannelInfo, ids map[string]string, tokenFile storage.TokenFile, width, height int) StreamsModel {
+	channelList := newChannelList(channels)
+	channelList.SetSize(width, height)
+	return StreamsModel{
+		State:          PageStreams,
+		Channels:       channels,
+		ChannelList:    channelList,
+		BroadcasterIDs: ids,
+		TokenFile:      tokenFile,
+	}
+}
 func newChannelList(channels []ChannelInfo) list.Model {
 	items := make([]list.Item, 0, len(channels))
 	for _, channel := range channels {
@@ -76,36 +74,13 @@ func (sm StreamsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			if sm.ActiveMPV != nil && sm.ActiveMPV.Process != nil {
-				sm.ActiveMPV.Process.Kill()
-			}
-
-			if sm.ActiveChat != nil && sm.ActiveChat.Process != nil {
-				sm.ActiveChat.Process.Kill()
-			}
-
-			sm.State = pageQuitting
-
+			sm.State = PageQuitting
 			return sm, tea.Quit
 		case "enter":
 			item, ok := sm.ChannelList.SelectedItem().(ChannelInfo)
 			if ok {
 				sm.SelectedChannel = item.BroadcasterName
-				broadcasterID := sm.BroadcasterIDs[item.BroadcasterName]
-
-				if sm.ActiveMPV != nil && sm.ActiveMPV.Process != nil {
-					sm.ActiveMPV.Process.Kill()
-				}
-
-				if sm.ActiveChat != nil && sm.ActiveChat.Process != nil {
-					sm.ActiveChat.Process.Kill()
-				}
-
-				mpvCommand, _ := startMPVWithStream(item.BroadcasterName)
-				sm.ActiveMPV = mpvCommand
-
-				chatCommand, _ := spawnChatWindow(broadcasterID, sm.TokenFile.UserID, sm.TokenFile.AccessToken)
-				sm.ActiveChat = chatCommand
+				return sm, tea.Quit
 			}
 			return sm, nil
 		}

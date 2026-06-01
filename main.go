@@ -1,75 +1,29 @@
-// NOTE: Cant use refreshtokens because they need client secret and cant give that publicly
+// NOTE: Cant use refresh tokens because they need client secret and cant give that publicly
 package main
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"time"
+	"os/exec"
 
-	_ "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
+	"github.com/NuuttiSir/tuiwatchers/internal/chat"
+	"github.com/NuuttiSir/tuiwatchers/internal/emotes"
+	"github.com/NuuttiSir/tuiwatchers/internal/player"
+	"github.com/NuuttiSir/tuiwatchers/internal/tui"
+	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
 )
 
-type DeviceCodeResponse struct {
-	DeviceCode      string `json:"device_code"`
-	Interval        int    `json:"interval"`
-	UserCode        string `json:"user_code"`
-	VerificationURI string `json:"verification_uri"`
-}
+func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
+	cmd := exec.Command("/usr/bin/ghostty", "-e", "bash", "-c",
+		"./tuiwatchers --chat "+twitch.ClientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
 
-type AccessToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	TokenType    string `json:"token_type"`
-}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
 
-type UserData struct {
-	BroadcasterType string    `json:"broadcaster_type"`
-	CreatedAt       time.Time `json:"created_at"`
-	Description     string    `json:"description"`
-	DisplayName     string    `json:"display_name"`
-	ID              string    `json:"id"`
-	Login           string    `json:"login"`
-	OfflineImageURL string    `json:"offline_image_url"`
-	ProfileImageURL string    `json:"profile_image_url"`
-	Type            string    `json:"type"`
-	ViewCount       int       `json:"view_count"`
-}
-
-type UserDataList struct {
-	Data []UserData `json:"data"`
-}
-
-type FollowData struct {
-	ID           string    `json:"id"`
-	UserID       string    `json:"user_id"`
-	UserLogin    string    `json:"user_login"`
-	UserName     string    `json:"user_name"`
-	GameID       string    `json:"game_id"`
-	GameName     string    `json:"game_name"`
-	Type         string    `json:"type"`
-	Title        string    `json:"title"`
-	ViewerCount  int       `json:"viewer_count"`
-	StartedAt    time.Time `json:"started_at"`
-	Language     string    `json:"language"`
-	ThumbnailURL string    `json:"thumbnail_url"`
-	TagIds       []any     `json:"tag_ids"`
-	Tags         []string  `json:"tags"`
-}
-
-type FollowDataList struct {
-	Data       []FollowData `json:"data"`
-	Pagination struct {
-		Cursor string `json:"cursor"`
-	} `json:"pagination"`
-}
-
-type TokenFile struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	UserID       string `json:"user_id"`
+	return cmd, nil
 }
 
 func openChat() {
@@ -77,36 +31,40 @@ func openChat() {
 	userID := os.Args[4]
 	accessToken := os.Args[5]
 
-	fmt.Println("CHAT")
-	fmt.Println("Starting chat window")
+	rt, err := chat.NewRawTerm()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer rt.Restore()
 
-	chatModel := InitialChatModel(broadcasterID, userID, accessToken)
-	program := tea.NewProgram(chatModel)
+	rt.InitScreen()
 
-	// channel for incoming messages
-	incoming := make(chan IncomingChatMessage, 50)
+	quit := make(chan struct{})
+	incoming := make(chan twitch.IncomingChatMessage, 50)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	//websocket listener
-	go connectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
-
+	go twitch.ConnectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
 	go func() {
 		for msg := range incoming {
-			program.Send(msg)
+			for _, part := range msg.Parts {
+				if part.Kind == "emote" {
+					emotes.FetchEmoteImage(part.EmoteID)
+				}
+			}
+			line := chat.ChatLine{User: msg.User, Parts: msg.Parts}
+			rt.PrintMessage(line)
 		}
 	}()
 
-	_, err := program.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-	cancel()
+	rt.InputLoop(broadcasterID, userID, accessToken, quit)
+	<-quit
 }
 
 func main() {
-	if len(os.Args) >= 2 {
+	if len(os.Args) >= 6 {
 		switch os.Args[1] {
 		case "--chat":
 			openChat()
@@ -114,7 +72,7 @@ func main() {
 		}
 	}
 
-	model := initialAuthModel()
+	model := tui.InitialAuthModel()
 	program := tea.NewProgram(model)
 	selectedChannel, err := program.Run()
 	if err != nil {
@@ -122,20 +80,46 @@ func main() {
 		os.Exit(1)
 	}
 
-	finalModel, ok := selectedChannel.(StreamsModel)
+	finalModel, ok := selectedChannel.(tui.StreamsModel)
 	if !ok {
 		fmt.Println("Could not cast model")
 		return
 	}
 
-	if finalModel.Err != nil {
-		fmt.Println(finalModel.Err)
-		return
-	}
+	for {
+		if finalModel.State == tui.PageQuitting || finalModel.SelectedChannel == "" {
+			break
+		}
 
-	broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
-	if broadcasterID == "" {
-		fmt.Println("Could not find broadcaster ID for selected channel")
-		return
+		broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
+		tokenFile := finalModel.TokenFile
+
+		chatCmd, _ := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+
+		mpvCmd, err := player.StartMPVWithStream(finalModel.SelectedChannel)
+		if err == nil && mpvCmd != nil {
+			mpvCmd.Wait()
+		}
+
+		if chatCmd != nil && chatCmd.Process != nil {
+			chatCmd.Process.Kill()
+		}
+
+		// re-show the streams list with the same data
+		prog2 := tea.NewProgram(tui.InitialStreamsModel(
+			finalModel.Channels,
+			finalModel.BroadcasterIDs,
+			tokenFile,
+			0, 0,
+		))
+		res2, err := prog2.Run()
+		if err != nil {
+			break
+		}
+		next, ok := res2.(tui.StreamsModel)
+		if !ok {
+			break
+		}
+		finalModel = next
 	}
 }
