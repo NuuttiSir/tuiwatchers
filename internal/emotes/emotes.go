@@ -4,15 +4,16 @@ import (
 	"encoding/base64"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
-
-	tea "charm.land/bubbletea/v2"
+	// tea "charm.land/bubbletea/v2"
 )
 
 type EmoteCache struct {
 	Emotes       map[string][]byte
 	FailedEmotes map[string]bool
+	inflight     map[string]bool
 	RWM          sync.RWMutex
 }
 
@@ -24,6 +25,7 @@ type EmoteLoadedMsg struct {
 var cache = &EmoteCache{
 	Emotes:       make(map[string][]byte),
 	FailedEmotes: make(map[string]bool),
+	inflight:     make(map[string]bool),
 }
 
 func EmoteImage(id string) ([]byte, bool) {
@@ -33,43 +35,55 @@ func EmoteImage(id string) ([]byte, bool) {
 	return img, ok
 }
 
-func FetchEmoteImage(id string) tea.Cmd {
-	return func() tea.Msg {
-		cache.RWM.RLock()
-		_, failed := cache.FailedEmotes[id]
-		_, ok := cache.Emotes[id]
-		cache.RWM.RUnlock()
+func FetchEmoteImage(id string) {
+	cache.RWM.RLock()
+	_, failed := cache.FailedEmotes[id]
+	_, ok := cache.Emotes[id]
+	cache.RWM.RUnlock()
 
-		if failed {
-			return EmoteLoadedMsg{ID: id, Success: false}
-		}
-		if ok {
-			return EmoteLoadedMsg{ID: id, Success: true}
-		}
-
-		// URLs last number tells how big the emote is, default is 28x28
-		// So if its changed to 2.0 it is going to be 56x56 etc
-		url := "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/1.0"
-		client := &http.Client{Timeout: 5 * time.Second}
-		resp, err := client.Get(url)
-		if err != nil {
-			cache.FailedEmotes[id] = true
-			return EmoteLoadedMsg{ID: id, Success: false}
-		}
-		defer resp.Body.Close()
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			cache.FailedEmotes[id] = true
-			return EmoteLoadedMsg{ID: id, Success: false}
-		}
-
-		cache.RWM.Lock()
-		cache.Emotes[id] = data
-		cache.RWM.Unlock()
-
-		return EmoteLoadedMsg{ID: id, Success: true}
+	if failed {
+		return
 	}
+	if ok {
+		return
+	}
+
+	url := "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/1.0"
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		cache.FailedEmotes[id] = true
+		return
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		cache.FailedEmotes[id] = true
+		return
+	}
+
+	cache.RWM.Lock()
+	cache.Emotes[id] = data
+	cache.RWM.Unlock()
+}
+
+func PrefetchEmoteImage(id string) {
+	cache.RWM.Lock()
+	_, have := cache.Emotes[id]
+	if have || cache.FailedEmotes[id] || cache.inflight[id] {
+		cache.RWM.Unlock()
+		return
+	}
+	cache.inflight[id] = true
+	cache.RWM.Unlock()
+
+	go func() {
+		FetchEmoteImage(id)
+		cache.RWM.Lock()
+		delete(cache.inflight, id)
+		cache.RWM.Unlock()
+}()
 }
 
 // NOTE: This is ATM a signle-chunk transmission. Images larger than 4mb one
@@ -77,8 +91,28 @@ func FetchEmoteImage(id string) tea.Cmd {
 // Twitch emotes as earlier stated with scale 1.0 are not that big
 func KittyInlineImage(data []byte) string {
 	encoded := base64.StdEncoding.EncodeToString(data)
-	// f=100 = PNG, a=T = transmit+display, q=2 = suppress response
-	// C=1    → advance cursor cell after image (inline placement)
-	// c=2,r=1 → display size: 2 cols wide, 1 row tall (fits emote in a chatline)
-	return "\x1b_Ga=T,f=100,C=1,c=2,r=1,q=2,m=0;" + encoded + "\x1b\\"
+	const chunkSize = 4096
+
+	if len(encoded) <= chunkSize {
+		// f=100 = PNG, a=T = transmit+display, q=2 = suppress response
+		// c=2,r=1 → display size: 2 cols wide, 1 row tall (fits emote in a chatline)
+		// (no C key: default cursor policy advances the cursor past the image)
+		return "\x1b_Ga=T,f=100,c=2,r=1,q=2;" + encoded + "\x1b\\"
+	}
+
+	var sb strings.Builder
+	sb.WriteString("\x1b_Ga=T,f=100,c=2,r=1,q=2,m=1;")
+	sb.WriteString(encoded[:chunkSize])
+	sb.WriteString("\x1b\\")
+	rest := encoded[chunkSize:]
+	for len(rest) > chunkSize {
+		sb.WriteString("\x1b_Gm=1;")
+		sb.WriteString(rest[:chunkSize])
+		sb.WriteString("\x1b\\")
+		rest = rest[chunkSize:]
+	}
+	sb.WriteString("x1b_Gm=0;")
+	sb.WriteString(rest)
+	sb.WriteString("\x1b\\")
+	return sb.String()
 }

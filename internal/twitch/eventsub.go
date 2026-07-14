@@ -30,7 +30,7 @@ type Session struct {
 	Status                  string    `json:"status"`
 	ConnectedAt             time.Time `json:"connected_at"`
 	KeepaliveTimeoutSeconds int       `json:"keepalive_timeout_seconds"`
-	ReconnectURL            any       `json:"reconnect_url"`
+	ReconnectURL            string    `json:"reconnect_url"`
 	RecoveryURL             any       `json:"recovery_url"`
 }
 
@@ -79,10 +79,29 @@ type ChatEvent struct {
 
 func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) {
 	// Open WebSocket connection
-	conn, _, err := websocket.Dial(ctx, "wss://eventsub.wss.twitch.tv/ws", nil)
+	wsURL := "wss://eventsub.wss.twitch.tv/ws"
+	isReconnect := false
+	for {
+		nextURL, err := runSession(ctx, wsURL, isReconnect, out, broadcasterID, userID, accessToken)
+		if err != nil {
+			if ctx.Err() != nil {
+				return // caller cancelled, exit quietly
+			}
+			// transient failure: retry the main endpoint with fresh subscribe
+			wsURL = "wss://eventsub.wss.twitch.tv/ws"
+			isReconnect = false
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		wsURL = nextURL // session_reconenct gave new URL
+		isReconnect = true
+	}
+}
+func runSession(ctx context.Context, wsURL string, isReconnect bool, out chan<- IncomingChatMessage, broadcasterID, userID, accessToken string) (string, error) {
+	conn, _, err := websocket.Dial(ctx, wsURL, nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		out <- IncomingChatMessage{User: "system", Text: fmt.Sprint(err)}
+		return "Error: ", err
 	}
 	defer conn.CloseNow()
 
@@ -93,15 +112,15 @@ func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 		// This BLOCKS meaning it waits until next message comes
 		_, msg, err := conn.Read(ctx)
 		if err != nil {
-			fmt.Println("read err: ", err)
-			return
+			out <- IncomingChatMessage{User: "system", Text: fmt.Sprint("read err: ", err)}
+			return "Error: ", err
 		}
 
 		// Parse the raw message into usable struct
 		var serverMessage ServerMessage
 		err = json.Unmarshal(msg, &serverMessage)
 		if err != nil {
-			fmt.Println("Unmarshaling err: ", err)
+			out <- IncomingChatMessage{User: "system", Text: fmt.Sprint("Unmarshaling err: ", err)}
 			continue
 		}
 
@@ -112,13 +131,20 @@ func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 			// First message Twitch sends
 			// Includes SESSION ID
 			if serverMessage.MessagePayload.Session == nil {
-				fmt.Println("welcome message has no session")
+				out <- IncomingChatMessage{User: "system", Text: "Welcome message has no session"}
 				continue
 			}
 			sessionID := serverMessage.MessagePayload.Session.ID
 
-			// SUBSCRIBE immediately with the SESSION ID
-			postSubscribe(ClientID, userID, broadcasterID, sessionID, accessToken)
+			// SUBSCRIBE immediately with the SESSION ID if this is not a
+			// reconnect so forst connect herp derp
+			if !isReconnect {
+				err := postSubscribe(ClientID, userID, broadcasterID, sessionID, accessToken)
+				if err != nil {
+					return "Error: ", err
+				}
+			}
+			continue
 
 		case "session_keepalive":
 			// Twitch sends these periodically to inform its still here
@@ -129,7 +155,7 @@ func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 		case "notification":
 			// This is the actual message, WE CARE ABOUT THIS
 			if serverMessage.MessagePayload.Event == nil {
-				fmt.Println("Notification has no event")
+				out <- IncomingChatMessage{User: "system", Text: "Notification has no event"}
 				continue
 			}
 			event := serverMessage.MessagePayload.Event
@@ -168,8 +194,7 @@ func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 			}
 
 		case "session_reconnect":
-			// Twitch wants us to reconnect, log it for now for funsies
-			fmt.Println("Twitch has requested reconnect")
+			return serverMessage.MessagePayload.Session.ReconnectURL, nil
 		}
 	}
 }

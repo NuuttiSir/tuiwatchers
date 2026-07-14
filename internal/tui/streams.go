@@ -21,6 +21,7 @@ type StreamsModel struct {
 }
 type ChannelInfo struct {
 	BroadcasterName string
+	Login           string
 	GameName        string
 	ViewCount       int
 }
@@ -79,7 +80,7 @@ func (sm StreamsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			item, ok := sm.ChannelList.SelectedItem().(ChannelInfo)
 			if ok {
-				sm.SelectedChannel = item.BroadcasterName
+				sm.SelectedChannel = item.Login
 				return sm, tea.Quit
 			}
 			return sm, nil
