@@ -1,16 +1,20 @@
 package player
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 )
 
 func StartMPVWithStream(channelName string) (*exec.Cmd, error) {
-	mpvInstance := exec.Command("/usr/bin/mpv",
+	mpvPath, err := exec.LookPath("mpv")
+	if err != nil {
+		return nil, fmt.Errorf("mpv not found in PATH: %w", err)
+	}
+	mpvInstance := exec.Command(mpvPath,
 		"--profile=sw-fast",
 		"--vo=kitty",
 		"--vo-kitty-use-shm=yes",
-		"--really-quiet",
 		"https://twitch.tv/"+channelName,
 	)
 
@@ -18,7 +22,7 @@ func StartMPVWithStream(channelName string) (*exec.Cmd, error) {
 	mpvInstance.Stdout = os.Stdout
 	mpvInstance.Stderr = os.Stderr
 
-	err := mpvInstance.Start()
+	err = mpvInstance.Start()
 	if err != nil {
 		return nil, err
 	}

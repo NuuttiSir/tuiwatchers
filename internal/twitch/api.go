@@ -22,6 +22,7 @@ type DeviceCodeResponse struct {
 	Interval        int    `json:"interval"`
 	UserCode        string `json:"user_code"`
 	VerificationURI string `json:"verification_uri"`
+	ExpiresIn       int    `json:"expires_in"`
 }
 type UserData struct {
 	BroadcasterType string    `json:"broadcaster_type"`
@@ -99,35 +100,49 @@ type DropReason struct {
 }
 
 func GetFollowedChannels(userID, clientID string, userToken AccessToken) (FollowDataList, error) {
-	req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
-	if err != nil {
-		return FollowDataList{}, fmt.Errorf("Create request: %w", err)
+	var followedChannelList FollowDataList
+	cursor := ""
+
+	for {
+		req, err := http.NewRequest("GET", TwitchAPIURL+"streams/followed", nil)
+		if err != nil {
+			return FollowDataList{}, fmt.Errorf("Create request: %w", err)
+		}
+		q := req.URL.Query()
+		q.Add("user_id", userID)
+		q.Add("first", "100")
+		if cursor != "" {
+			q.Add("after", cursor)
+		}
+
+		req.URL.RawQuery = q.Encode()
+
+		req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
+		req.Header.Set("Client-Id", clientID)
+
+		resp, err := HTTPClient.Do(req)
+		if err != nil {
+			return FollowDataList{}, fmt.Errorf("Do request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
+		}
+
+		var page FollowDataList
+		err = json.NewDecoder(resp.Body).Decode(&page)
+		if err != nil {
+			return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
+		}
+
+		followedChannelList.Data = append(followedChannelList.Data, page.Data...)
+		cursor = page.Pagination.Cursor
+		if cursor == "" {
+			return followedChannelList, nil
+		}
 	}
-
-	q := req.URL.Query()
-	q.Add("user_id", userID)
-	req.URL.RawQuery = q.Encode()
-
-	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
-	req.Header.Set("Client-Id", clientID)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return FollowDataList{}, fmt.Errorf("Do request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
-	}
-
-	var followDataList FollowDataList
-	if err := json.NewDecoder(resp.Body).Decode(&followDataList); err != nil {
-		return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
-	}
-	return followDataList, nil
 }
 
 func GetAuthenticatedUser(clientID string, userToken AccessToken) (UserData, error) {
@@ -139,8 +154,7 @@ func GetAuthenticatedUser(clientID string, userToken AccessToken) (UserData, err
 	req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
 	req.Header.Set("Client-Id", clientID)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
 		return UserData{}, fmt.Errorf("Do request: %w", err)
 	}
@@ -183,8 +197,7 @@ func PostChatMessage(broadcasterID, userID, accessToken, message string) Receive
 	req.Header.Set("Client-Id", ClientID)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
 		return ReceivedChatMessageAnswer{}
@@ -203,11 +216,7 @@ func PostChatMessage(broadcasterID, userID, accessToken, message string) Receive
 		return ReceivedChatMessageAnswer{}
 	}
 
-	return ReceivedChatMessageAnswer{
-		MessageID: chatMessageAnswer.MessageID,
-		IsSent:    chatMessageAnswer.IsSent,
-	}
-
+	return chatMessageAnswer
 }
 
 // func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
@@ -224,7 +233,7 @@ func PostChatMessage(broadcasterID, userID, accessToken, message string) Receive
 // 	}
 // }
 
-func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) {
+func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) error {
 	data := SubscriptionRequest{
 		Type:    "channel.chat.message",
 		Version: "1",
@@ -240,25 +249,26 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 
 	body, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/eventsub/subscriptions", bytes.NewBuffer(body))
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Client-Id", clientID)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("Subscribe request: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("Subscribe failed: %d: %s", resp.StatusCode, body)
+	}
+	return nil
 }

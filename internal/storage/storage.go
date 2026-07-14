@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type TokenFile struct {
@@ -22,7 +23,7 @@ func SaveToken(path, accessToken, userID string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, bytesWrite, 0644)
+	return os.WriteFile(path, bytesWrite, 0600)
 }
 
 func TokenLoad(path string) (TokenFile, error) {
@@ -45,4 +46,19 @@ func CheckTokenFile(tokenFilePath string) error {
 		}
 	}
 	return nil
+}
+
+func TokenFilePath() (string, error) {
+	dir, err := os.UserConfigDir() //.config in Linux i guess
+	if err != nil {
+		return "", err
+	}
+
+	appDir := filepath.Join(dir, "tuiwatchers")
+	err = os.MkdirAll(appDir, 0o700)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(appDir, "tokens.json"), nil
 }
