@@ -9,17 +9,23 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/NuuttiSir/tuiwatchers/internal/chat"
-	"github.com/NuuttiSir/tuiwatchers/internal/emotes"
+	// "github.com/NuuttiSir/tuiwatchers/internal/emotes"
 	"github.com/NuuttiSir/tuiwatchers/internal/player"
 	"github.com/NuuttiSir/tuiwatchers/internal/tui"
 	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
 )
 
 func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, error) {
-	cmd := exec.Command("ghostty"+"-e", "bash", "-c",
-		"./tuiwatchers --chat "+twitch.ClientID+" "+broadcasterID+" "+userID+" "+accessToken+";exec bash")
+	executable, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	startScript := fmt.Sprintf("%q --chat %s %s %s; exec bash", executable, twitch.ClientID, broadcasterID, userID)
+	cmd := exec.Command("ghostty", "-e", "bash", "-c", startScript)
+	cmd.Env = append(os.Environ(), "TUIWATCHERS_TOKEN="+accessToken)
 
-	if err := cmd.Start(); err != nil {
+	err = cmd.Start()
+	if err != nil {
 		return nil, err
 	}
 
@@ -29,7 +35,11 @@ func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, erro
 func openChat() {
 	broadcasterID := os.Args[3]
 	userID := os.Args[4]
-	accessToken := os.Args[5]
+	accessToken := os.Getenv("TUIWATCHERS_TOKEN")
+	if accessToken == "" {
+		fmt.Println("missing TUIWATCHERS_TOKEN")
+		return
+	}
 
 	rt, err := chat.NewRawTerm()
 	if err != nil {
@@ -39,6 +49,7 @@ func openChat() {
 	defer rt.Restore()
 
 	rt.InitScreen()
+	rt.WatchResize()
 
 	quit := make(chan struct{})
 	incoming := make(chan twitch.IncomingChatMessage, 50)
@@ -49,11 +60,6 @@ func openChat() {
 	go twitch.ConnectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
 	go func() {
 		for msg := range incoming {
-			for _, part := range msg.Parts {
-				if part.Kind == "emote" {
-					emotes.FetchEmoteImage(part.EmoteID)
-				}
-			}
 			line := chat.ChatLine{User: msg.User, Parts: msg.Parts}
 			rt.PrintMessage(line)
 		}
@@ -64,7 +70,7 @@ func openChat() {
 }
 
 func main() {
-	if len(os.Args) >= 6 {
+	if len(os.Args) >= 5 {
 		switch os.Args[1] {
 		case "--chat":
 			openChat()
@@ -94,12 +100,16 @@ func main() {
 		broadcasterID := finalModel.BroadcasterIDs[finalModel.SelectedChannel]
 		tokenFile := finalModel.TokenFile
 
+		chatCmd, err := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
+		if err != nil {
+			fmt.Printf("Failed to open chat window: %v\n", err)
+		}
+
 		mpvCmd, err := player.StartMPVWithStream(finalModel.SelectedChannel)
 		if err == nil && mpvCmd != nil {
 			mpvCmd.Wait()
 		}
 
-		chatCmd, _ := spawnChatWindow(broadcasterID, tokenFile.UserID, tokenFile.AccessToken)
 		if chatCmd != nil && chatCmd.Process != nil {
 			chatCmd.Process.Kill()
 		}

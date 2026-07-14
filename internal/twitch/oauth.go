@@ -2,6 +2,7 @@ package twitch
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,7 +13,7 @@ const TwitchOauthURL = "https://id.twitch.tv/oauth2/"
 
 // deviceToken returns the Device Token returned by Twitch device API
 func DeviceToken() DeviceCodeResponse {
-	resp, err := http.PostForm(TwitchOauthURL+"device", url.Values{
+	resp, err := HTTPClient.PostForm(TwitchOauthURL+"device", url.Values{
 		"client_id": {ClientID},
 		"scopes":    {"user:read:follows user:write:chat user:read:chat"},
 	})
@@ -30,32 +31,54 @@ func DeviceToken() DeviceCodeResponse {
 	return deviceCodeResponse
 }
 
-func GetUserToken(/**ctx context.Context,**/ deviceCode DeviceCodeResponse) AccessToken {
-	for {
-		time.Sleep(time.Duration(deviceCode.Interval) * time.Second)
+func GetUserToken( /**ctx context.Context,**/ deviceCode DeviceCodeResponse) (AccessToken, error) {
+	deadline := time.Now().Add(time.Duration(deviceCode.ExpiresIn) * time.Second)
+	interval := time.Duration(deviceCode.Interval) * time.Second
 
-		resp, err := http.PostForm(TwitchOauthURL+"token", url.Values{
-			"client_id":   {ClientID},
-			"device_code": {deviceCode.DeviceCode},
-			"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
-		})
+	for time.Now().Before(deadline) {
+		time.Sleep(interval)
+
+		token, twitchErr, err := pollToken(deviceCode)
 		if err != nil {
-			fmt.Println("err:", err)
-			return AccessToken{}
+			return AccessToken{}, err
 		}
-		defer resp.Body.Close()
-
-		var userToken AccessToken
-		if err := json.NewDecoder(resp.Body).Decode(&userToken); err != nil {
-			fmt.Println("err:", err)
-			return AccessToken{}
+		if token.AccessToken != "" {
+			return token, nil
 		}
 
-		if userToken.AccessToken != "" {
-			return userToken
+		switch twitchErr {
+		case "authorization_pending":
+			continue
+		case "slow_down":
+			interval += time.Second
+		default:
+			return AccessToken{}, fmt.Errorf("Device AUTH failed: %s", twitchErr)
 		}
-		resp.Body.Close()
 	}
+	return AccessToken{}, errors.New("Device code expired before authorization")
+}
+
+func pollToken(deviceCode DeviceCodeResponse) (AccessToken, string, error) {
+	resp, err := HTTPClient.PostForm(TwitchOauthURL+"token", url.Values{
+		"client_id":   {ClientID},
+		"device_code": {deviceCode.DeviceCode},
+		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
+	})
+	if err != nil {
+		return AccessToken{}, "", err
+	}
+	defer resp.Body.Close()
+
+	var accessTokenWithMessage struct {
+		AccessToken
+		Message string `json:"message"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&accessTokenWithMessage)
+	if err != nil {
+		return AccessToken{}, "", err
+	}
+	return accessTokenWithMessage.AccessToken, accessTokenWithMessage.Message, nil
+
 }
 
 func ValidateToken(accessTokenParam string) bool {
@@ -66,8 +89,7 @@ func ValidateToken(accessTokenParam string) bool {
 	}
 	req.Header.Set("Authorization", "OAuth "+accessTokenParam)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return false

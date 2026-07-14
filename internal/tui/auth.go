@@ -12,10 +12,6 @@ import (
 	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
 )
 
-const (
-	tokenFilePath = "tokens.json"
-)
-
 type AuthModel struct {
 	State        page
 	Spinner      spinner.Model
@@ -130,6 +126,11 @@ func (am AuthModel) View() tea.View {
 }
 
 func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, tea.Cmd) {
+	tokenFilePath, err := storage.TokenFilePath()
+	if err != nil {
+		return am, tea.Quit
+	}
+
 	if msg.Err != nil || msg.UserToken.AccessToken == "" {
 		am.State = PageQuitting
 		am.Err = msg.Err
@@ -155,9 +156,15 @@ func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, te
 		return am, tea.Quit
 	}
 	followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
-	if len(followDataList.Data) == 0 || err != nil {
+	if err != nil {
 		am.State = PageQuitting
 		am.Err = errors.New("no followed channels found")
+		return am, tea.Quit
+	}
+	// Same here as in getFollowedChannels
+	if len(followDataList.Data) == 0 {
+		am.State = PageQuitting
+		am.Err = errors.New("none of the channels that you follow are live ATM")
 		return am, tea.Quit
 	}
 
@@ -186,16 +193,22 @@ func (am AuthModel) BuildChannelList(followDataList twitch.FollowDataList) ([]Ch
 		}
 		channels = append(channels, ChannelInfo{
 			BroadcasterName: channel.UserName,
+			Login:           channel.UserLogin,
 			GameName:        channel.GameName,
 			ViewCount:       channel.ViewerCount,
 		})
-		ids[channel.UserName] = channel.UserID
+		ids[channel.UserLogin] = channel.UserID
 	}
 	return channels, ids
 }
 
 func AuthStartCommand() tea.Cmd {
 	return func() tea.Msg {
+		tokenFilePath, err := storage.TokenFilePath()
+		if err != nil {
+			return AuthErrorMessage{Err: err}
+		}
+
 		if err := storage.CheckTokenFile(tokenFilePath); err != nil {
 			return AuthErrorMessage{Err: err}
 		}
@@ -207,8 +220,12 @@ func AuthStartCommand() tea.Cmd {
 
 		if twitch.ValidateToken(tokenFile.AccessToken) {
 			followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
-			if len(followDataList.Data) == 0 || err != nil {
+			if err != nil {
 				return AuthErrorMessage{Err: err}
+			}
+			// Can't decide if i want to show this error or just give the user a empty list of channels
+			if len(followDataList.Data) == 0 {
+				return AuthErrorMessage{Err: errors.New("None of the channels that you follow are live ATM")}
 			}
 
 			channels, ids := InitialAuthModel().BuildChannelList(followDataList)
@@ -233,12 +250,11 @@ func AuthStartCommand() tea.Cmd {
 
 func AuthPollCommand(deviceCode twitch.DeviceCodeResponse) tea.Cmd {
 	return func() tea.Msg {
-		userToken := twitch.GetUserToken(deviceCode)
-		if userToken.AccessToken == "" {
-			return AuthErrorMessage{Err: errors.New("authentication failed")}
+		userToken, err := twitch.GetUserToken(deviceCode)
+		if err != nil {
+			return AuthErrorMessage{Err: err}
 		}
 		return AuthUserTokenMessage{UserToken: userToken}
-
 	}
 }
 
