@@ -9,7 +9,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/NuuttiSir/tuiwatchers/internal/chat"
-	// "github.com/NuuttiSir/tuiwatchers/internal/emotes"
 	"github.com/NuuttiSir/tuiwatchers/internal/player"
 	"github.com/NuuttiSir/tuiwatchers/internal/tui"
 	"github.com/NuuttiSir/tuiwatchers/internal/twitch"
@@ -20,7 +19,7 @@ func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, erro
 	if err != nil {
 		return nil, err
 	}
-	startScript := fmt.Sprintf("%q --chat %s %s %s; exec bash", executable, twitch.ClientID, broadcasterID, userID)
+	startScript := fmt.Sprintf("%q --chat %s %s; exec bash", executable, broadcasterID, userID)
 	cmd := exec.Command("ghostty", "-e", "bash", "-c", startScript)
 	cmd.Env = append(os.Environ(), "TUIWATCHERS_TOKEN="+accessToken)
 
@@ -32,9 +31,7 @@ func spawnChatWindow(broadcasterID, userID, accessToken string) (*exec.Cmd, erro
 	return cmd, nil
 }
 
-func openChat() {
-	broadcasterID := os.Args[3]
-	userID := os.Args[4]
+func openChat(broadcasterID, userID string) {
 	accessToken := os.Getenv("TUIWATCHERS_TOKEN")
 	if accessToken == "" {
 		fmt.Println("missing TUIWATCHERS_TOKEN")
@@ -60,7 +57,11 @@ func openChat() {
 	go twitch.ConnectAndListen(ctx, incoming, broadcasterID, userID, accessToken)
 	go func() {
 		for msg := range incoming {
-			line := chat.ChatLine{User: msg.User, Parts: msg.Parts}
+			parts := msg.Parts
+			if len(parts) == 0 && msg.Text != "" {
+				parts = []twitch.MessagePart{{Kind: "text", Text: msg.Text}}
+			}
+			line := chat.ChatLine{User: msg.User, Parts: parts}
 			rt.PrintMessage(line)
 		}
 	}()
@@ -70,10 +71,10 @@ func openChat() {
 }
 
 func main() {
-	if len(os.Args) >= 5 {
+	if len(os.Args) >= 4 {
 		switch os.Args[1] {
 		case "--chat":
-			openChat()
+			openChat(os.Args[2], os.Args[3]) // 2 = broadcasterID, 3 = userID
 			return
 		}
 	}
@@ -86,10 +87,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	finalModel, ok := selectedChannel.(tui.StreamsModel)
-	if !ok {
-		fmt.Println("Could not cast model")
+	var finalModel tui.StreamsModel
+	switch model := selectedChannel.(type) {
+	case tui.StreamsModel:
+		finalModel = model
+	case tui.AuthModel:
+		if model.Err != nil {
+			fmt.Printf("Authentication failed: %v\n", model.Err)
+			os.Exit(1)
+		}
+		return // User quit during auth
+	default:
+		fmt.Printf("Unexpected model type returned from auth")
 		return
+
 	}
 
 	for {
@@ -106,7 +117,9 @@ func main() {
 		}
 
 		mpvCmd, err := player.StartMPVWithStream(finalModel.SelectedChannel)
-		if err == nil && mpvCmd != nil {
+		if err != nil {
+			fmt.Printf("Could not start mpv player: %v\n", err)
+		} else if mpvCmd != nil {
 			mpvCmd.Wait()
 		}
 
@@ -116,9 +129,15 @@ func main() {
 
 		// re-show the streams list with the same data
 		// If streamer goes offline while watching other streams, IDK if their streams show on the list and what happens if clicked
+		followed, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
+		channels, ids := finalModel.Channels, finalModel.BroadcasterIDs // fallback as in stale/old data
+		if err == nil {
+			// TODO: make into package level function so tui.BuildCahnnelsList when time
+			channels, ids = tui.AuthModel{}.BuildChannelList(followed)
+		}
 		prog2 := tea.NewProgram(tui.InitialStreamsModel(
-			finalModel.Channels,
-			finalModel.BroadcasterIDs,
+			channels,
+			ids,
 			tokenFile,
 			0, 0,
 		))

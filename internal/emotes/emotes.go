@@ -7,25 +7,24 @@ import (
 	"strings"
 	"sync"
 	"time"
-	// tea "charm.land/bubbletea/v2"
 )
 
 type EmoteCache struct {
 	Emotes       map[string][]byte
 	FailedEmotes map[string]bool
-	inflight     map[string]bool
+	// inflight     map[string]bool
 	RWM          sync.RWMutex
 }
 
-type EmoteLoadedMsg struct {
-	ID      string
-	Success bool
-}
+// type EmoteLoadedMsg struct {
+// 	ID      string
+// 	Success bool
+// }
 
 var cache = &EmoteCache{
 	Emotes:       make(map[string][]byte),
 	FailedEmotes: make(map[string]bool),
-	inflight:     make(map[string]bool),
+	// inflight:     make(map[string]bool),
 }
 
 func EmoteImage(id string) ([]byte, bool) {
@@ -52,14 +51,25 @@ func FetchEmoteImage(id string) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
+		cache.RWM.Lock()
 		cache.FailedEmotes[id] = true
+		cache.RWM.Unlock()
 		return
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		cache.RWM.Lock()
+		cache.FailedEmotes[id] = true
+		cache.RWM.Unlock()
+		return
+	}
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
+		cache.RWM.Lock()
 		cache.FailedEmotes[id] = true
+		cache.RWM.Unlock()
 		return
 	}
 
@@ -68,27 +78,24 @@ func FetchEmoteImage(id string) {
 	cache.RWM.Unlock()
 }
 
-func PrefetchEmoteImage(id string) {
-	cache.RWM.Lock()
-	_, have := cache.Emotes[id]
-	if have || cache.FailedEmotes[id] || cache.inflight[id] {
-		cache.RWM.Unlock()
-		return
-	}
-	cache.inflight[id] = true
-	cache.RWM.Unlock()
+// func PrefetchEmoteImage(id string) {
+// 	cache.RWM.Lock()
+// 	_, have := cache.Emotes[id]
+// 	if have || cache.FailedEmotes[id] || cache.inflight[id] {
+// 		cache.RWM.Unlock()
+// 		return
+// 	}
+// 	cache.inflight[id] = true
+// 	cache.RWM.Unlock()
+//
+// 	go func() {
+// 		FetchEmoteImage(id)
+// 		cache.RWM.Lock()
+// 		delete(cache.inflight, id)
+// 		cache.RWM.Unlock()
+// }()
+// }
 
-	go func() {
-		FetchEmoteImage(id)
-		cache.RWM.Lock()
-		delete(cache.inflight, id)
-		cache.RWM.Unlock()
-}()
-}
-
-// NOTE: This is ATM a signle-chunk transmission. Images larger than 4mb one
-// would need to split into chunks with m=
-// Twitch emotes as earlier stated with scale 1.0 are not that big
 func KittyInlineImage(data []byte) string {
 	encoded := base64.StdEncoding.EncodeToString(data)
 	const chunkSize = 4096
@@ -111,7 +118,7 @@ func KittyInlineImage(data []byte) string {
 		sb.WriteString("\x1b\\")
 		rest = rest[chunkSize:]
 	}
-	sb.WriteString("x1b_Gm=0;")
+	sb.WriteString("\x1b_Gm=0;")
 	sb.WriteString(rest)
 	sb.WriteString("\x1b\\")
 	return sb.String()

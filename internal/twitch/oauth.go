@@ -12,23 +12,21 @@ import (
 const TwitchOauthURL = "https://id.twitch.tv/oauth2/"
 
 // deviceToken returns the Device Token returned by Twitch device API
-func DeviceToken() DeviceCodeResponse {
+func DeviceToken() (DeviceCodeResponse, error) {
 	resp, err := HTTPClient.PostForm(TwitchOauthURL+"device", url.Values{
 		"client_id": {ClientID},
 		"scopes":    {"user:read:follows user:write:chat user:read:chat"},
 	})
 	if err != nil {
-		fmt.Println("error:", err)
-		return DeviceCodeResponse{}
+		return DeviceCodeResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	var deviceCodeResponse DeviceCodeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&deviceCodeResponse); err != nil {
-		fmt.Println("error decoding:", err)
-		return DeviceCodeResponse{}
+		return DeviceCodeResponse{}, err
 	}
-	return deviceCodeResponse
+	return deviceCodeResponse, nil
 }
 
 func GetUserToken( /**ctx context.Context,**/ deviceCode DeviceCodeResponse) (AccessToken, error) {
@@ -81,24 +79,26 @@ func pollToken(deviceCode DeviceCodeResponse) (AccessToken, string, error) {
 
 }
 
-func ValidateToken(accessTokenParam string) bool {
+func ValidateToken(accessTokenParam string) (bool, error) {
 	req, err := http.NewRequest("GET", TwitchOauthURL+"validate", nil)
 	if err != nil {
-		fmt.Println("err: ", err)
-		return false
+		return false, err
 	}
 	req.Header.Set("Authorization", "OAuth "+accessTokenParam)
 
 	resp, err := HTTPClient.Do(req)
 	if err != nil {
-		fmt.Println("err: ", err)
-		return false
+		return false, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return false
+	if resp.StatusCode == http.StatusUnauthorized {
+		return false, nil
 	}
 
-	return true
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("Validate returned: %d", resp.StatusCode)
+	}
+
+	return true, nil
 }

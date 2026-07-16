@@ -3,6 +3,7 @@ package twitch
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -81,18 +82,42 @@ func ConnectAndListen(ctx context.Context, out chan<- IncomingChatMessage, broad
 	// Open WebSocket connection
 	wsURL := "wss://eventsub.wss.twitch.tv/ws"
 	isReconnect := false
+
+	delay := 2 * time.Second
+	const maxDelay = 60 * time.Second
 	for {
+		start := time.Now()
 		nextURL, err := runSession(ctx, wsURL, isReconnect, out, broadcasterID, userID, accessToken)
 		if err != nil {
 			if ctx.Err() != nil {
 				return // caller cancelled, exit quietly
 			}
-			// transient failure: retry the main endpoint with fresh subscribe
+			if errors.Is(err, ErrSubscribeRejected) {
+				out <- IncomingChatMessage{User: "system", Text: "Chat conenction rejected (token expired?). Please restart the app: " + err.Error()}
+				return
+			}
+
+			if time.Since(start) > time.Minute {
+				delay = 2 * time.Second
+			}
+
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return
+			}
+
+			// Double for next time, capped.
+			delay *= 2
+			if delay > maxDelay {
+				delay = maxDelay
+			}
+
 			wsURL = "wss://eventsub.wss.twitch.tv/ws"
 			isReconnect = false
-			time.Sleep(2 * time.Second)
 			continue
 		}
+		delay = 2 * time.Second
 		wsURL = nextURL // session_reconenct gave new URL
 		isReconnect = true
 	}
@@ -107,10 +132,13 @@ func runSession(ctx context.Context, wsURL string, isReconnect bool, out chan<- 
 
 	// Start infinite read loop
 	// We keep listening forever because Twitch will keep sending us messages
+	readTimeout := 30 * time.Second
 	for {
 		// Read next message from Twitch
 		// This BLOCKS meaning it waits until next message comes
-		_, msg, err := conn.Read(ctx)
+		readCtx, cancelRead := context.WithTimeout(ctx, readTimeout)
+		_, msg, err := conn.Read(readCtx)
+		cancelRead()
 		if err != nil {
 			out <- IncomingChatMessage{User: "system", Text: fmt.Sprint("read err: ", err)}
 			return "Error: ", err
@@ -135,6 +163,11 @@ func runSession(ctx context.Context, wsURL string, isReconnect bool, out chan<- 
 				continue
 			}
 			sessionID := serverMessage.MessagePayload.Session.ID
+
+			if serverMessage.MessagePayload.Session.KeepaliveTimeoutSeconds > 0 {
+				// Little headroom as in 5 secs
+				readTimeout = time.Duration(serverMessage.MessagePayload.Session.KeepaliveTimeoutSeconds)*time.Second + 5*time.Second
+			}
 
 			// SUBSCRIBE immediately with the SESSION ID if this is not a
 			// reconnect so forst connect herp derp
@@ -194,6 +227,10 @@ func runSession(ctx context.Context, wsURL string, isReconnect bool, out chan<- 
 			}
 
 		case "session_reconnect":
+			if serverMessage.MessagePayload.Session == nil {
+				out <- IncomingChatMessage{User: "system", Text: "Session reconnect message has no session"}
+				continue
+			}
 			return serverMessage.MessagePayload.Session.ReconnectURL, nil
 		}
 	}

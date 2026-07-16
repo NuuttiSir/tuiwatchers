@@ -10,11 +10,6 @@ func RenderLine(line ChatLine) {
 	fmt.Printf("\x1b[1m%s\x1b[0m: ", line.User) // bold username
 
 	for _, part := range line.Parts {
-		if len(line.Parts) == 0 {
-			fmt.Print(part.Text)
-			return
-		}
-
 		switch part.Kind {
 		case "text":
 			fmt.Print(part.Text)

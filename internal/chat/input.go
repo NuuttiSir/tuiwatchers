@@ -23,6 +23,7 @@ func (rt *RawTerminal) InputLoop(broadcasterID, userID, accessToken string, quit
 
 	redraw := func() {
 		rt.mu.Lock()
+		rt.inputLine = string(buf)
 		fmt.Printf("\x1b[%d;1H\x1b[2K> %s", rt.Height, string(buf))
 		rt.mu.Unlock()
 	}
@@ -30,7 +31,8 @@ func (rt *RawTerminal) InputLoop(broadcasterID, userID, accessToken string, quit
 	for {
 		n, err := os.Stdin.Read(raw)
 		if err != nil || n == 0 {
-			continue
+			close(quit)
+			return
 		}
 		data := append(pending, raw[:n]...)
 		pending = nil
@@ -44,7 +46,7 @@ func (rt *RawTerminal) InputLoop(broadcasterID, userID, accessToken string, quit
 				return
 			case 27:
 				// a lone ESC is  n == 1, an arrow key is 3+ bytes ( ESC [ A )
-				if n == len(data)-1 {
+				if i == len(data)-1 {
 					close(quit)
 					return
 				}
@@ -63,12 +65,16 @@ func (rt *RawTerminal) InputLoop(broadcasterID, userID, accessToken string, quit
 				redraw()
 				if msg != "" {
 					go func() {
-						resp := twitch.PostChatMessage(broadcasterID, userID, accessToken, msg)
+						resp, err := twitch.PostChatMessage(broadcasterID, userID, accessToken, msg)
+						if err != nil {
+							rt.PrintSystem("Send error: " + err.Error())
+							return
+						}
 						if !resp.IsSent {
 							dropReason := resp.DropReason.Message
-							// if dropReason == "" {
-							// 	dropReason = "Message not sent (Default reason)"
-							// }
+							if dropReason == "" {
+								dropReason = "Message not sent (No reason given)"
+							}
 							rt.PrintSystem("Reason for dropping message: " + dropReason)
 						}
 					}()

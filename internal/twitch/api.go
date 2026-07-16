@@ -3,6 +3,7 @@ package twitch
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,12 +12,15 @@ import (
 
 const TwitchAPIURL = "https://api.twitch.tv/helix/"
 
+var ErrSubscribeRejected = errors.New("Subscribe rejected")
+
 type AccessToken struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 }
+
 type DeviceCodeResponse struct {
 	DeviceCode      string `json:"device_code"`
 	Interval        int    `json:"interval"`
@@ -24,6 +28,7 @@ type DeviceCodeResponse struct {
 	VerificationURI string `json:"verification_uri"`
 	ExpiresIn       int    `json:"expires_in"`
 }
+
 type UserData struct {
 	BroadcasterType string    `json:"broadcaster_type"`
 	CreatedAt       time.Time `json:"created_at"`
@@ -94,6 +99,10 @@ type ReceivedChatMessageAnswer struct {
 	DropReason DropReason `json:"drop_reason"`
 }
 
+type ChatMessageResponse struct {
+	Data []ReceivedChatMessageAnswer `json:"data"`
+}
+
 type DropReason struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -120,21 +129,27 @@ func GetFollowedChannels(userID, clientID string, userToken AccessToken) (Follow
 		req.Header.Set("Authorization", "Bearer "+userToken.AccessToken)
 		req.Header.Set("Client-Id", clientID)
 
-		resp, err := HTTPClient.Do(req)
-		if err != nil {
-			return FollowDataList{}, fmt.Errorf("Do request: %w", err)
-		}
-		defer resp.Body.Close()
+		page, err := func() (FollowDataList, error) {
+			resp, err := HTTPClient.Do(req)
+			if err != nil {
+				return FollowDataList{}, fmt.Errorf("Do request: %w", err)
+			}
+			defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(resp.Body)
-			return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
-		}
+			if resp.StatusCode != http.StatusOK {
+				body, _ := io.ReadAll(resp.Body)
+				return FollowDataList{}, fmt.Errorf("Api error: %d,: %s", resp.StatusCode, string(body))
+			}
 
-		var page FollowDataList
-		err = json.NewDecoder(resp.Body).Decode(&page)
+			var page FollowDataList
+			err = json.NewDecoder(resp.Body).Decode(&page)
+			if err != nil {
+				return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
+			}
+			return page, nil
+		}()
 		if err != nil {
-			return FollowDataList{}, fmt.Errorf("Decode error: %w", err)
+			return FollowDataList{}, err
 		}
 
 		followedChannelList.Data = append(followedChannelList.Data, page.Data...)
@@ -175,22 +190,20 @@ func GetAuthenticatedUser(clientID string, userToken AccessToken) (UserData, err
 	return userDataList.Data[0], nil
 }
 
-func PostChatMessage(broadcasterID, userID, accessToken, message string) ReceivedChatMessageAnswer {
-	data := SendChatMessage{
+func PostChatMessage(broadcasterID, userID, accessToken, message string) (ReceivedChatMessageAnswer, error) {
+	messageData := SendChatMessage{
 		BroadcasterID: broadcasterID,
 		SenderID:      userID,
 		Message:       message,
 	}
-	body, err := json.Marshal(data)
+	body, err := json.Marshal(messageData)
 	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
+		return ReceivedChatMessageAnswer{}, err
 	}
 
 	req, err := http.NewRequest("POST", "https://api.twitch.tv/helix/chat/messages", bytes.NewBuffer(body))
 	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
+		return ReceivedChatMessageAnswer{}, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -199,39 +212,30 @@ func PostChatMessage(broadcasterID, userID, accessToken, message string) Receive
 
 	resp, err := HTTPClient.Do(req)
 	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
+		return ReceivedChatMessageAnswer{}, err
 	}
 	defer resp.Body.Close()
 
-	var chatMessageAnswer ReceivedChatMessageAnswer
-	dat, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
-	}
-	err = json.Unmarshal(dat, &chatMessageAnswer)
-	if err != nil {
-		fmt.Println(err)
-		return ReceivedChatMessageAnswer{}
+		return ReceivedChatMessageAnswer{}, err
 	}
 
-	return chatMessageAnswer
+	if resp.StatusCode != http.StatusOK {
+		return ReceivedChatMessageAnswer{}, fmt.Errorf("Send failed: %d: %s", resp.StatusCode, data)
+	}
+
+	var chatMessageAnswer ChatMessageResponse
+	err = json.Unmarshal(data, &chatMessageAnswer)
+	if err != nil {
+		return ReceivedChatMessageAnswer{}, err
+	}
+	if len(chatMessageAnswer.Data) == 0 {
+		return ReceivedChatMessageAnswer{}, errors.New("Send response had no data")
+	}
+
+	return chatMessageAnswer.Data[0], nil
 }
-
-// func sendChatCommand(broadcasterID, userID, accessToken, message string) tea.Cmd {
-// 	return func() tea.Msg {
-// 		resp := PostChatMessage(broadcasterID, userID, accessToken, message)
-// 		if !resp.IsSent {
-// 			return chat.SendResultMessage{
-// 				Ok:  false,
-// 				Err: errors.New(resp.DropReason.Message),
-// 			}
-// 		}
-// 		return chat.SendResultMessage{Ok: true}
-//
-// 	}
-// }
 
 func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken string) error {
 	data := SubscriptionRequest{
@@ -266,9 +270,15 @@ func postSubscribe(clientID, userID, broadcasterID, sessionID, accessToken strin
 		return fmt.Errorf("Subscribe request: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusAccepted {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Subscribe failed: %d: %s", resp.StatusCode, body)
+
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("%w: %d: %s", ErrSubscribeRejected, resp.StatusCode, respBody)
 	}
+	if resp.StatusCode != http.StatusAccepted {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("Subscribe failed: %d: %s", resp.StatusCode, respBody)
+	}
+
 	return nil
 }

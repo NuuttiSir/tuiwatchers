@@ -108,7 +108,7 @@ func (am AuthModel) View() tea.View {
 	case PageAuthentication:
 		status := "Authenticating..."
 		if am.AuthStatus != "" {
-			status = fmt.Sprintf("%s\n%s %s", status, am.Spinner.View(), am.AuthStatus)
+			status = fmt.Sprintf("%s\n%s", status, am.AuthStatus)
 		}
 		str = fmt.Sprintf("%s %s", am.Spinner.View(), status)
 		return renderView(str)
@@ -128,6 +128,8 @@ func (am AuthModel) View() tea.View {
 func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, tea.Cmd) {
 	tokenFilePath, err := storage.TokenFilePath()
 	if err != nil {
+		am.State = PageQuitting
+		am.Err = err
 		return am, tea.Quit
 	}
 
@@ -140,7 +142,7 @@ func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, te
 	authUser, err := twitch.GetAuthenticatedUser(twitch.ClientID, msg.UserToken)
 	if authUser.ID == "" || err != nil {
 		am.State = PageQuitting
-		am.Err = errors.New("could not fetch user data")
+		am.Err = fmt.Errorf("could not fetch user data: %w", err)
 		return am, tea.Quit
 	}
 
@@ -158,20 +160,20 @@ func (am AuthModel) HandleAuthUserToken(msg AuthUserTokenMessage) (AuthModel, te
 	followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
 	if err != nil {
 		am.State = PageQuitting
-		am.Err = errors.New("no followed channels found")
+		am.Err = fmt.Errorf("could not fetch followed channels: %w", err)
 		return am, tea.Quit
 	}
 	// Same here as in getFollowedChannels
 	if len(followDataList.Data) == 0 {
 		am.State = PageQuitting
-		am.Err = errors.New("none of the channels that you follow are live ATM")
+		am.Err = fmt.Errorf("none of the channels that you follow are live ATM: %w", err)
 		return am, tea.Quit
 	}
 
 	channels, ids := am.BuildChannelList(followDataList)
 	if len(channels) == 0 {
 		am.State = PageQuitting
-		am.Err = errors.New("no live channels found")
+		am.Err = fmt.Errorf("No live channels found: %w", err)
 		return am, tea.Quit
 	}
 
@@ -218,7 +220,11 @@ func AuthStartCommand() tea.Cmd {
 			return AuthErrorMessage{Err: err}
 		}
 
-		if twitch.ValidateToken(tokenFile.AccessToken) {
+		validToken, err := twitch.ValidateToken(tokenFile.AccessToken)
+		if err != nil {
+			return AuthErrorMessage{Err: fmt.Errorf("Could not reach Twitch to validate token: %w", err)}
+		}
+		if validToken {
 			followDataList, err := twitch.GetFollowedChannels(tokenFile.UserID, twitch.ClientID, twitch.AccessToken{AccessToken: tokenFile.AccessToken})
 			if err != nil {
 				return AuthErrorMessage{Err: err}
@@ -240,9 +246,9 @@ func AuthStartCommand() tea.Cmd {
 			}
 		}
 
-		deviceCode := twitch.DeviceToken()
-		if deviceCode.DeviceCode == "" {
-			return AuthErrorMessage{Err: errors.New("could not get device code")}
+		deviceCode, err := twitch.DeviceToken()
+		if err != nil {
+			return AuthErrorMessage{Err: fmt.Errorf("could not get device code: %w", err)}
 		}
 		return AuthDeviceCodeMessage{DeviceCode: deviceCode}
 	}

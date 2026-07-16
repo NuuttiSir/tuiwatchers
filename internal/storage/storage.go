@@ -3,7 +3,6 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -40,7 +39,6 @@ func TokenLoad(path string) (TokenFile, error) {
 
 func CheckTokenFile(tokenFilePath string) error {
 	if _, err := os.Stat(tokenFilePath); errors.Is(err, os.ErrNotExist) {
-		fmt.Println("tokens.json not found... Creating file")
 		if err := SaveToken(tokenFilePath, "", ""); err != nil {
 			return err
 		}

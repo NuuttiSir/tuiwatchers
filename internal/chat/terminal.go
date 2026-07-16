@@ -19,6 +19,7 @@ type RawTerminal struct {
 	Height         int
 	ChatRows       int
 	mu             sync.Mutex
+	inputLine      string
 }
 
 type ChatLine struct {
@@ -50,18 +51,18 @@ func (rt *RawTerminal) Restore() {
 func (rt *RawTerminal) InitScreen() {
 	fmt.Print("\x1b[2J")                  // Clear screen
 	fmt.Printf("\x1b[1;%dr", rt.ChatRows) // scroll region = 1..ChatRows
-	fmt.Printf("\x1b[%d;1H", rt.Height)   // Cursor to input line on prompt
+	fmt.Printf("\x1b[%d;1H> ", rt.Height) // Cursor to input line on prompt, draw prompt carot as well
 }
 
 func (rt *RawTerminal) PrintMessage(line ChatLine) {
-	rt.mu.Lock()
-	defer rt.mu.Unlock()
-
 	for _, part := range line.Parts {
 		if part.Kind == "emote" {
-			emotes.PrefetchEmoteImage(part.EmoteID)
+			emotes.FetchEmoteImage(part.EmoteID)
 		}
 	}
+	rt.mu.Lock()
+
+	defer rt.mu.Unlock()
 
 	fmt.Print("\x1b[s")                       // save cursor (currently at input line)
 	fmt.Printf("\x1b[%d;1H\r\n", rt.ChatRows) // go to last scroll line, emit newline → scrolls region
@@ -71,7 +72,7 @@ func (rt *RawTerminal) PrintMessage(line ChatLine) {
 }
 
 func (rt *RawTerminal) PrintSystem(text string) {
-	rt.PrintMessage(ChatLine{User: "system", 
+	rt.PrintMessage(ChatLine{User: "system",
 		Parts: []twitch.MessagePart{{Kind: "text", Text: text}}})
 }
 
@@ -87,7 +88,7 @@ func (rt *RawTerminal) WatchResize() {
 			rt.mu.Lock()
 			rt.Width, rt.Height, rt.ChatRows = width, height, height-3
 			fmt.Printf("\x1b[1;%dr", rt.ChatRows) // a new scroll region
-			fmt.Printf("\x1b[%d;1H\x1b[2K> ", rt.Height)
+			fmt.Printf("\x1b[%d;1H\x1b[2K> %s", rt.Height, rt.inputLine)
 			rt.mu.Unlock()
 		}
 	}()
